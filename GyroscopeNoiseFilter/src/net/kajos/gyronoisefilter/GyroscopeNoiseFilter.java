@@ -11,6 +11,7 @@ import java.util.List;
 
 import static de.robv.android.xposed.XposedHelpers.findClass;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -192,6 +193,8 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
             final Class<?> sensorEQ = findClass(
                     "android.hardware.SystemSensorManager$SensorEventQueue",
                     lpparam.classLoader);
+            
+            final String pkgName = lpparam.packageName;
 
             XposedBridge.hookAllMethods(sensorEQ, "dispatchSensorEvent", new
                     XC_MethodHook() {
@@ -229,26 +232,101 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) throws
                                 Throwable {
+                        	//Log.d(TAG, "Hook 0! in :"+pkgName);
+                        	float[] values = (float[]) param.args[1];
+                        	//Log.d(TAG, "KOKO1");
+                            for (int i = 0;i<values.length;i++) {
+                            	//Log.d(TAG, "KOKO before values: "+i+" : "+values[i]);
+                            	values[i] = 0.0f;
+                            	//Log.d(TAG, "KOKO after values: "+i+" : "+values[i]);
+                            }
+                            //Log.d(TAG, "KOKO2");
+                        	/*
                             Field field = param.thisObject.getClass().getEnclosingClass().getDeclaredField("sHandleToSensor");
                             field.setAccessible(true);
                             int handle = (Integer) param.args[0];
                             Sensor ss = ((SparseArray<Sensor>) field.get(0)).get(handle);
-                            if(ss.getType() == Sensor.TYPE_GYROSCOPE || ss.getType() == Sensor.TYPE_GYROSCOPE_UNCALIBRATED || ss.getType() == Sensor.TYPE_ALL){
+                            if(ss.getType() == Sensor.TYPE_GYROSCOPE || ss.getType() == Sensor.TYPE_GYROSCOPE_UNCALIBRATED){
                                 changeSensorEvent((float[]) param.args[1]);
                             }
+                            */
                         }
                     });
 
-            Log.d(TAG, "Installed sensorevent patch in: " + lpparam.packageName);
+            Log.d(TAG, "Installed systemsensorevent patch in: " + lpparam.packageName);
 
         } catch (Throwable t) {
         	Log.e(TAG, "Exception in SystemSensorEvent hook: "+t.getMessage());
             // Do nothing
         }
 
+    	// -- SensorManager hook (general hook on the gyroscope)
+        try {
+            final Class<?> sensorEQ = findClass(
+                    "android.hardware.SensorEventListener",
+                    lpparam.classLoader);
+
+            XposedBridge.hookAllMethods(sensorEQ, "onSensorChanged", new
+                    XC_MethodHook() {
+            			// Pre-process for this hook
+
+            			// Set the number of values to anti-jitter
+            			// You should edit this for each hook
+                    	int nbaxis = 3;
+
+		            	// Init the arrays
+                    	int filter_size = 10;
+                        float medianValues[][] = new float[nbaxis][filter_size]; // stores the last sensor's values in each dimension (3D so 3 dimensions)
+                        float prevValues[] = new float[nbaxis]; // stores the previous sensor's values to restore them if needed
+
+                        private void changeSensorEvent(float[] values) {
+                        	// Note about values[]:
+                        	// values[] contains the current sensor's value for each axis (there are 3 since it's in 3D).
+                        	// The values are measured in rad/s, which is standard since Android 2.3 (before, some phones can return values in deg/s).
+                        	// To get values of about 1.0 you have to turn at a speed of almost 60 deg/s.
+
+                        	// Anti-jitter the values!
+                        	// Externalizing the antiJitterValues() function (ie, putting it outside of the hook) allows us to reuse the same function for several hooks.
+                        	// However, the previous values and the history of the median values will be different for different hooks (because the values are different), so we need to preprocess the values and to store them in different arrays for each hook. That's why we do this pre-processing here (and above this function).
+                        	List<Object> retlist = antiJitterValues(false, values, medianValues, prevValues);
+
+                        	// Update the local arrays for this hook
+                        	medianValues = (float[][])retlist.get(0);
+                        	prevValues = (float[])retlist.get(1);
+                        }
+
+                        // Hook caller
+                        // This is where we tell what we should do when the hook is triggered (ie, when the hooked function/method is called)
+                        // Basically, we just check a few stuffs about the sensor's values and then we call our changeSensorEvent() to do the rest
+                        @SuppressWarnings("unchecked")
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws
+                                Throwable {
+                        	Log.d(TAG, "Hook 6!");
+                        	SensorEvent event = (SensorEvent)param.args[0];
+                        	float[] values = (float[]) event.values;
+                            for (int i = 0;i<values.length;i++) {
+                            	//Log.d(TAG, "KEKE before values: "+i+" : "+values[i]);
+                            	values[i] = 0.0f;
+                            }
+                        	/*
+                            int ssType = (Integer) param.args[0];
+                            if(ssType == Sensor.TYPE_GYROSCOPE || ssType == Sensor.TYPE_GYROSCOPE_UNCALIBRATED){
+                                changeSensorEvent((float[]) param.args[1]);
+                            }
+                            */
+                        }
+                    });
+
+            Log.d(TAG, "Installed yet another hook patch in: " + lpparam.packageName);
+
+        } catch (Throwable t) {
+        	Log.e(TAG, "Exception in Yet Another Hook: "+t.getMessage());
+            // Do nothing
+        }
+
         // -- Cardboard SDK hook: HeadTransform
         // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
-        /*
         try {
             final Class<?> cla = findClass(
                     "com.google.vrtoolkit.cardboard.HeadTransform",
@@ -296,14 +374,17 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
 	                        Log.d(TAG, "BOBO1");
 		                    for (int i = 0;i<values.length;i++) {
 		                    	Log.d(TAG, "BOBO before values: "+i+" : "+values[i]);
-		                    	//values[i] = 0.0f;
+		                    	values[i] = 0.0f;
 		                    }
+		                    param.setResult(values);
+		                    /*
 		                    changeSensorEvent(values);
 		                    for (int i = 0;i<values.length;i++) {
 		                    	Log.d(TAG, "BOBO after values: "+i+" : "+values[i]);
 		                    	//values[i] = 0.0f;
 		                    }
 	                        Log.d(TAG, "BOBO2");
+	                        */
 	                    }
                     });
 
@@ -313,7 +394,6 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
         	Log.e(TAG, "Exception in Cardboard Head hook: "+t.getMessage());
             // Do nothing
         }
-        */
 
         // -- Cardboard SDK hook: Eye
         // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
@@ -365,14 +445,17 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
                             Log.d(TAG, "BABA1");
                             for (int i = 0;i<values.length;i++) {
                             	Log.d(TAG, "BABA before values: "+i+" : "+values[i]);
-                            	//values[i] = 0.0f;
+                            	values[i] = 0.0f;
                             }
+                            param.setResult(values);
+                            /*
                             changeSensorEvent(values);
                             for (int i = 0;i<values.length;i++) {
                             	Log.d(TAG, "BABA after values: "+i+" : "+values[i]);
                             	//values[i] = 0.0f;
                             }
                             Log.d(TAG, "BABA2");
+                            */
                         }
                     });
 
@@ -383,7 +466,44 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
             // Do nothing
         }
 
-        // -- Cardboard SDK hook: Another one
+        // -- Cardboard SDK hook: Zeiss Headtracking
+        // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
+        try {
+            final Class<?> cla = findClass(
+                    "de.zeiss.mmd.headtracking",
+                    lpparam.classLoader);
+
+            XposedBridge.hookAllMethods(cla, "getRotation", new
+                    XC_MethodHook() {
+
+		                // Hook caller
+		                // This is where we tell what we should do when the hook is triggered (ie, when the hooked function/method is called)
+		                // Basically, we just check a few stuffs about the sensor's values and then we call our changeSensorEvent() to do the rest
+	                    @Override
+	                    protected void afterHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook Zeiss!");
+	                        super.afterHookedMethod(param);
+                            double[] values = (double[])param.getResult();
+	                        Log.d(TAG, "COCO1");
+		                    for (int i = 0;i<values.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values[i]);
+		                    	values[i] = (double)0.0f;
+		                    }
+		                    //changeSensorEvent(values);
+		                    param.setResult(values);
+	                        Log.d(TAG, "COCO2");
+	                    }
+                    });
+
+            Log.d(TAG, "Installed cardboard zeiss in: " + lpparam.packageName);
+
+        } catch (Throwable t) {
+        	Log.e(TAG, "Exception in Cardboard Zeiss hook: "+t.getMessage());
+            // Do nothing
+        }
+        
+        // -- GeomagneticField hook
         // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
         try {
             final Class<?> cla = findClass(
@@ -393,40 +513,10 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
             XposedBridge.hookAllMethods(cla, "getX", new
                     XC_MethodHook() {
 
-		    			// Pre-process for this hook
-
-		    			// Set the number of values to anti-jitter
-		    			// You should edit this for each hook
-		            	int nbaxis = 13;
-
-		            	// Init the arrays
-		            	int filter_size = 10;
-		                float medianValues[][] = new float[nbaxis][filter_size]; // stores the last sensor's values in each dimension (3D so 3 dimensions)
-		                float prevValues[] = new float[nbaxis]; // stores the previous sensor's values to restore them if needed
-
-		                private void changeSensorEvent(float[] values) {
-		                	// Note about values[]:
-		                	// values[] contains the current sensor's value for each axis (there are 3 since it's in 3D).
-		                	// The values are measured in rad/s, which is standard since Android 2.3 (before, some phones can return values in deg/s).
-		                	// To get values of about 1.0 you have to turn at a speed of almost 60 deg/s.
-
-		                	// Anti-jitter the values!
-		                	// Externalizing the antiJitterValues() function (ie, putting it outside of the hook) allows us to reuse the same function for several hooks.
-		                	// However, the previous values and the history of the median values will be different for different hooks (because the values are different), so we need to preprocess the values and to store them in different arrays for each hook. That's why we do this pre-processing here (and above this function).
-		                	List<Object> retlist = antiJitterValues(true, values, medianValues, prevValues);
-
-		                	// Update the local arrays for this hook
-		                	medianValues = (float[][])retlist.get(0);
-		                	prevValues = (float[])retlist.get(1);
-		                }
-
-		                // Hook caller
-		                // This is where we tell what we should do when the hook is triggered (ie, when the hooked function/method is called)
-		                // Basically, we just check a few stuffs about the sensor's values and then we call our changeSensorEvent() to do the rest
 	                    @Override
 	                    protected void afterHookedMethod(MethodHookParam param) throws
 	                            Throwable {
-	                        Log.d(TAG, "Hook 3!");
+	                        Log.d(TAG, "Hook Geomagnetic 1!");
 	                        super.afterHookedMethod(param);
                             float[] values = (float[])param.getResult();
 	                        Log.d(TAG, "COCO1");
@@ -435,6 +525,7 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
 		                    	values[i] = 0.0f;
 		                    }
 		                    //changeSensorEvent(values);
+		                    param.setResult(values);
 	                        Log.d(TAG, "COCO2");
 	                    }
                     });
@@ -442,13 +533,10 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
             XposedBridge.hookAllMethods(cla, "getY", new
                     XC_MethodHook() {
 
-		                // Hook caller
-		                // This is where we tell what we should do when the hook is triggered (ie, when the hooked function/method is called)
-		                // Basically, we just check a few stuffs about the sensor's values and then we call our changeSensorEvent() to do the rest
 	                    @Override
 	                    protected void afterHookedMethod(MethodHookParam param) throws
 	                            Throwable {
-	                        Log.d(TAG, "Hook 3!");
+	                        Log.d(TAG, "Hook Geomagnetic 2!");
 	                        super.afterHookedMethod(param);
                             float[] values = (float[])param.getResult();
 	                        Log.d(TAG, "COCO1");
@@ -457,6 +545,7 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
 		                    	values[i] = 0.0f;
 		                    }
 		                    //changeSensorEvent(values);
+		                    param.setResult(values);
 	                        Log.d(TAG, "COCO2");
 	                    }
                     });
@@ -464,13 +553,10 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
             XposedBridge.hookAllMethods(cla, "getZ", new
                     XC_MethodHook() {
 
-		                // Hook caller
-		                // This is where we tell what we should do when the hook is triggered (ie, when the hooked function/method is called)
-		                // Basically, we just check a few stuffs about the sensor's values and then we call our changeSensorEvent() to do the rest
 	                    @Override
 	                    protected void afterHookedMethod(MethodHookParam param) throws
 	                            Throwable {
-	                        Log.d(TAG, "Hook 3!");
+	                        Log.d(TAG, "Hook Geomagnetic 3!");
 	                        super.afterHookedMethod(param);
                             float[] values = (float[])param.getResult();
 	                        Log.d(TAG, "COCO1");
@@ -479,14 +565,126 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
 		                    	values[i] = 0.0f;
 		                    }
 		                    //changeSensorEvent(values);
+		                    param.setResult(values);
 	                        Log.d(TAG, "COCO2");
 	                    }
                     });
 
-            Log.d(TAG, "Installed cardboard another patch in: " + lpparam.packageName);
+            XposedBridge.hookAllMethods(cla, "getInclination", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void afterHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook Geomagnetic 4!");
+	                        super.afterHookedMethod(param);
+                            float value = (Float) param.getResult();
+                            value = 0.0f;
+                            param.setResult(value);
+	                    }
+                    });
+
+            XposedBridge.hookAllMethods(cla, "getDeclination", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void afterHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook Geomagnetic 5!");
+	                        super.afterHookedMethod(param);
+                            float value = (Float) param.getResult();
+                            value = 0.0f;
+                            param.setResult(value);
+	                    }
+                    });
+
+            XposedBridge.hookAllMethods(cla, "computeGeocentricCoordinates", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void afterHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook Geomagnetic 6!");
+	                        super.afterHookedMethod(param);
+	                        param.args[0] = 0.0f;
+	                        param.args[1] = 0.0f;
+	                        param.args[2] = 0.0f;
+	                    }
+                    });
+
+            Log.d(TAG, "Installed geomagnetic patch in: " + lpparam.packageName);
 
         } catch (Throwable t) {
-        	Log.e(TAG, "Exception in Cardboard Another hook: "+t.getMessage());
+        	Log.e(TAG, "Exception in geomagnetic hook: "+t.getMessage());
+            // Do nothing
+        }
+
+        // -- Android SensorManager hook
+        // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
+        try {
+            final Class<?> cla = findClass(
+                    "android.hardware.SensorManager",
+                    lpparam.classLoader);
+
+            XposedBridge.hookAllMethods(cla, "getRotation", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void beforeHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook SensorManager 1!");
+                            float[] values1 = (float[])param.args[2];
+                            float[] values2 = (float[])param.args[3];
+	                        Log.d(TAG, "COCO1");
+		                    for (int i = 0;i<values1.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values1[i]);
+		                    	values1[i] = 0.0f;
+		                    }
+		                    for (int i = 0;i<values2.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values2[i]);
+		                    	values2[i] = 0.0f;
+		                    }
+	                        Log.d(TAG, "COCO2");
+	                    }
+                    });
+
+            XposedBridge.hookAllMethods(cla, "getInclination", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void afterHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook SensorManager 2!");
+	                        super.afterHookedMethod(param);
+                            float value = (Float) param.getResult();
+                            value = 0.0f;
+                            param.setResult(value);
+	                    }
+                    });
+
+            XposedBridge.hookAllMethods(cla, "getOrientation", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void afterHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook SensorManager 3!");
+	                        super.afterHookedMethod(param);
+                            float[] values = (float[])param.args[1];
+	                        Log.d(TAG, "COCO1");
+		                    for (int i = 0;i<values.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values[i]);
+		                    	values[i] = 0.0f;
+		                    }
+	                        Log.d(TAG, "COCO2");
+	                    }
+                    });
+
+
+            Log.d(TAG, "Installed sensormanager patch in: " + lpparam.packageName);
+
+        } catch (Throwable t) {
+        	Log.e(TAG, "Exception in sensormanager hook: "+t.getMessage());
             // Do nothing
         }
 
