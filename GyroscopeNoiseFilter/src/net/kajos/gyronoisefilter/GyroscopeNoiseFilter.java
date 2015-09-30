@@ -234,11 +234,17 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
                                 Throwable {
                         	//Log.d(TAG, "Hook 0! in :"+pkgName);
                         	float[] values = (float[]) param.args[1];
-                        	//Log.d(TAG, "KOKO1");
-                            for (int i = 0;i<values.length;i++) {
-                            	//Log.d(TAG, "KOKO before values: "+i+" : "+values[i]);
-                            	values[i] = 0.0f;
-                            	//Log.d(TAG, "KOKO after values: "+i+" : "+values[i]);
+                        	Field field = param.thisObject.getClass().getEnclosingClass().getDeclaredField("sHandleToSensor");
+                            field.setAccessible(true);
+                            int handle = (Integer) param.args[0];
+                            Sensor ss = ((SparseArray<Sensor>) field.get(0)).get(handle);
+                            if(ss.getType() != Sensor.TYPE_AMBIENT_TEMPERATURE && ss.getType() != Sensor.TYPE_LIGHT && ss.getType() != Sensor.TYPE_PRESSURE && ss.getType() != Sensor.TYPE_PROXIMITY && ss.getType() != Sensor.TYPE_RELATIVE_HUMIDITY && ss.getType() != Sensor.TYPE_TEMPERATURE){
+	                        	//Log.d(TAG, "KOKO1");
+	                            for (int i = 0;i<values.length;i++) {
+	                            	//Log.d(TAG, "KOKO before values: "+i+" : "+values[i]);
+	                            	values[i] = 0.0f;
+	                            	//Log.d(TAG, "KOKO after values: "+i+" : "+values[i]);
+	                            }
                             }
                             //Log.d(TAG, "KOKO2");
                         	/*
@@ -685,6 +691,80 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
 
         } catch (Throwable t) {
         	Log.e(TAG, "Exception in sensormanager hook: "+t.getMessage());
+            // Do nothing
+        }
+
+        // -- CardboardView hook
+        // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
+        try {
+            final Class<?> cla = findClass(
+                    "com.google.vrtoolkit.cardboard.CardboardView$Renderer",
+                    lpparam.classLoader);
+
+            XposedBridge.hookAllMethods(cla, "onDrawFrame", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void beforeHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook CardboardView!");
+                            float[] values1 = (float[])param.args[0];
+                            float[] values2 = (float[])param.args[1];
+                            float[] values3 = (float[])param.args[2];
+	                        Log.d(TAG, "COCO1");
+		                    for (int i = 0;i<values1.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values1[i]);
+		                    	values1[i] = 0.0f;
+		                    }
+		                    for (int i = 0;i<values2.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values2[i]);
+		                    	values2[i] = 0.0f;
+		                    }
+		                    for (int i = 0;i<values3.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values3[i]);
+		                    	values3[i] = 0.0f;
+		                    }
+	                        Log.d(TAG, "COCO2");
+	                    }
+                    });
+
+
+            Log.d(TAG, "Installed cardboardview patch in: " + lpparam.packageName);
+
+        } catch (Throwable t) {
+        	Log.e(TAG, "Exception in cardboardview hook: "+t.getMessage());
+            // Do nothing
+        }
+
+     // -- CardboardView hook
+        // This is an optional hook (ie, it will hook only if the lib is used in the app), hence the try/catch
+        try {
+            final Class<?> cla = findClass(
+                    "com.google.vrtoolkit.cardboard.CardboardView$StereoRenderer",
+                    lpparam.classLoader);
+
+            XposedBridge.hookAllMethods(cla, "onDrawEye", new
+                    XC_MethodHook() {
+
+	                    @Override
+	                    protected void beforeHookedMethod(MethodHookParam param) throws
+	                            Throwable {
+	                        Log.d(TAG, "Hook CardboardView StereoRenderer!");
+                            float[] values = (float[])param.args[0];
+	                        Log.d(TAG, "COCO1");
+		                    for (int i = 0;i<values.length;i++) {
+		                    	Log.d(TAG, "COCO before values: "+i+" : "+values[i]);
+		                    	values[i] = 0.0f;
+		                    }
+	                        Log.d(TAG, "COCO2");
+	                    }
+                    });
+
+
+            Log.d(TAG, "Installed cardboardview stereorenderer patch in: " + lpparam.packageName);
+
+        } catch (Throwable t) {
+        	Log.e(TAG, "Exception in cardboardview stereorenderer hook: "+t.getMessage());
             // Do nothing
         }
 
