@@ -16,18 +16,13 @@ class Util {
      * Low-pass filter implementation.
      *
      * @see <a href="http://en.wikipedia.org/wiki/Low-pass_filter#Algorithmic_implementation">Algorithmic_implementation</a>
-     * @see <a href="http://en.wikipedia.org/wiki/Low-pass_filter#Simple_infinite_impulse_response_filter">Simple infinite impulse response filter</a>
-     * @see <a href="http://en.wikipedia.org/wiki/Low-pass_filter#Discrete-time_realization">Discrete-time realization</a>
      * Alpha is the time smoothing constant for the low-pass filter. 0 <= alpha <= 1;
-     * a smaller value basically means more smoothing. All credits go to Thom Nichols Thom Nichols.
-     * See <a href="http://blog.thomnichols.org/2011/08/smoothing-sensor-data-with-a-low-pass-filter">his article</a>
+     * a smaller value basically means more smoothing. All credits go to Thom Nichols;
+     * see <a href="http://blog.thomnichols.org/2011/08/smoothing-sensor-data-with-a-low-pass-filter">his article</a>
      * and <a href="http://stackoverflow.com/a/5780505/1121352">StackOverflow answer</a>.
      */
     static float lowPass(float alpha, float current, float prev) {
-        //if ( prev == null ) return current;
 
-        //for ( int i=0; i<input.length; i++ ) {
-        //}
         return prev + alpha * (current - prev);
     }
 

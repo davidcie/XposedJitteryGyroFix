@@ -34,16 +34,12 @@ public class GyroscopeFilter {
 
         String algorithm = XposedModule.sPrefs.getString("filter_type", "median");
         float alpha = Float.parseFloat(XposedModule.sPrefs.getString("filter_alpha", "0.5"));
-        float threshold = Float.parseFloat(XposedModule.sPrefs
-                                                   .getString("filter_min_change", "0.0"));
-        float stationaryThreshold = Float.parseFloat(XposedModule.sPrefs
-                                                             .getString("filter_stationary_min_change", "0.0"));
-        int roundingPrecision = Integer.parseInt(XposedModule.sPrefs
-                                                         .getString("filter_round_precision", "0"));
+        float threshold = Float.parseFloat(XposedModule.sPrefs.getString("filter_min_change", "0.0"));
+        float stationaryThreshold = Float.parseFloat(XposedModule.sPrefs.getString("filter_stationary_min_change", "0.0"));
+        int roundingPrecision = Integer.parseInt(XposedModule.sPrefs.getString("filter_round_precision", "0"));
 
         // If user changed filter size, increase the size of the array
-        int newFilterSize = Integer.parseInt(XposedModule.sPrefs
-                                                     .getString("filter_size", "10"));
+        int newFilterSize = Integer.parseInt(XposedModule.sPrefs.getString("filter_size", "10"));
         mRawReadings = Util.resizeSecondDimension(mRawReadings, newFilterSize);
 
         // Process the new gyroscope reading
@@ -74,13 +70,8 @@ public class GyroscopeFilter {
                 computedReading = sum / mRawReadings[a].length;
             } else if (algorithm.equals("lowpass")) {
                 computedReading = Util.lowPass(alpha, reading[a], mPreviousReading[a]);
-            } else if (algorithm.equals("addsmooth")) {
-                // Additive smoothing (TODO: check the math)
-                float sum = 0.0f;
-                for (float val : mRawReadings[a]) sum += val;
-                computedReading = (reading[a] + alpha) / (sum + alpha * mRawReadings.length);
             }
-            Log.v(TAG, "Filtering using '" + algorithm + "', result is " + computedReading);
+            Log.v(TAG, "Filtered using '" + algorithm + "', result is " + computedReading);
 
             // Step 4: apply thresholding vs previously computed value
             if (mAbsoluteMode || reading[a] != 0.0f) {

@@ -4,7 +4,7 @@ import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 
-public class GyroscopeNoiseFilterSettingsActivity extends PreferenceActivity {
+public class SettingsActivity extends PreferenceActivity {
 
     @SuppressWarnings("deprecation")
     @Override

@@ -24,12 +24,11 @@
             android:value="Apply a noise filter on gyroscope to avoid jitter in head tracking / VR apps such as Google Cardboard." />
 
         <activity
-            android:name="net.davidcie.gyroscopebandaid.GyroscopeNoiseFilterSettingsActivity"
+            android:name="net.davidcie.gyroscopebandaid.SettingsActivity"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             android:label="@string/title_activity_settings" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

@@ -7,6 +7,7 @@ import net.davidcie.gyroscopebandaid.hooks.SensorEventApi23;
 import net.davidcie.gyroscopebandaid.hooks.SensorEventApi24;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
+import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -25,7 +26,7 @@ public class XposedModule implements IXposedHookLoadPackage {
      */
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        XposedBridge.log("GyroFilter: loading package " + lpparam.packageName);
+        XposedBridge.log("GyroBandaid: loading package " + lpparam.packageName);
 
         // Load preferences using Xposed, SharedPreferences() won't work inside the hook
         sPrefs = new XSharedPreferences(XposedModule.class.getPackage().getName(), "pref_median");
@@ -36,35 +37,44 @@ public class XposedModule implements IXposedHookLoadPackage {
     }
 
     private void hookGyroInterceptor(final XC_LoadPackage.LoadPackageParam lpparam) {
-        // Since API18 SensorEventQueue dispatches events via the same method:
-        // dispatchSensorEvent(int handle, float[] values, int inAccuracy, long timestamp)
+        // Since API 18 SensorEventQueue dispatches events via the same method but details change.
+        XC_MethodHook dispatchHook;
+        if (Build.VERSION.SDK_INT >= 24) dispatchHook = new SensorEventApi24();
+        else if (Build.VERSION.SDK_INT == 23) dispatchHook = new SensorEventApi23();
+        else dispatchHook = new SensorEventApi18();
 
-        if (Build.VERSION.SDK_INT >= 24) {
-            XposedHelpers.findAndHookMethod(
-                    "android.hardware.SystemSensorManager$SensorEventQueue",
-                    lpparam.classLoader, "dispatchSensorEvent", int.class, float[].class, int.class, long.class,
-                    new SensorEventApi24()
-            );
-        } else if (Build.VERSION.SDK_INT == 23) {
-            XposedHelpers.findAndHookMethod(
-                    "android.hardware.SystemSensorManager$SensorEventQueue",
-                    lpparam.classLoader, "dispatchSensorEvent", int.class, float[].class, int.class, long.class,
-                    new SensorEventApi23()
-            );
-        } else if (Build.VERSION.SDK_INT >= 18) {
-            XposedHelpers.findAndHookMethod(
-                    "android.hardware.SystemSensorManager$SensorEventQueue",
-                    lpparam.classLoader, "dispatchSensorEvent", int.class, float[].class, int.class, long.class,
-                    new SensorEventApi18()
-            );
-        } else {
-            XposedBridge.log("GyroFilter: using an unsupported API " + Build.VERSION.SDK_INT);
-        }
+        // dispatchSensorEvent(int handle, float[] values, int inAccuracy, long timestamp)
+        XposedHelpers.findAndHookMethod(
+                "android.hardware.SystemSensorManager$SensorEventQueue",
+                lpparam.classLoader, "dispatchSensorEvent", int.class, float[].class, int.class, long.class,
+                dispatchHook
+        );
     }
 
     private void hookCardboardInterceptor(final XC_LoadPackage.LoadPackageParam lpparam) {
         try {
             Class headTransformTMP = XposedHelpers.findClassIfExists("com.google.vrtoolkit.cardboard.HeadTransform", lpparam.classLoader);
+            if (headTransformTMP != null) {
+                XposedBridge.log("GyroBandaid: Found com.google.vrtoolkit.cardboard.HeadTransform in " + lpparam.packageName);
+            } else {
+                headTransformTMP = XposedHelpers.findClassIfExists("com.google.vr.sdk.base.HeadTransform", lpparam.classLoader);
+                if (headTransformTMP != null) XposedBridge.log("GyroBandaid: Found com.google.vr.sdk.base.HeadTransform in " + lpparam.packageName);
+                else return;
+            }
+
+            final Class headTransform = headTransformTMP;
+
+            // getHeadView (float[] headView, int offset)
+            XposedHelpers.findAndHookMethod(
+                    headTransform.getName(),
+                    lpparam.classLoader, "getHeadView", float[].class, int.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            XposedBridge.log("GyroBandaid: getHeadView called");
+                        }
+                    }
+            );
         } catch (Exception e) { e.printStackTrace(); }
     }
 }
