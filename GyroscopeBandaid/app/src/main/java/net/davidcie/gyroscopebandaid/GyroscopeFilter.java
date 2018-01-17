@@ -28,21 +28,21 @@ public class GyroscopeFilter {
         Log.d(TAG, "processSensorReadings called with " + Util.printArray(reading));
 
         // We are inside the hook so normally we have no access to the module's preferences.
-        //GyroscopeBandaid.sPrefs.makeWorldReadable();
+        //XposedModule.sPrefs.makeWorldReadable();
         // Just in case the user changed preferences without rebooting.
-        GyroscopeBandaid.sPrefs.reload();
+        XposedModule.sPrefs.reload();
 
-        String algorithm = GyroscopeBandaid.sPrefs.getString("filter_type", "median");
-        float alpha = Float.parseFloat(GyroscopeBandaid.sPrefs.getString("filter_alpha", "0.5"));
-        float threshold = Float.parseFloat(GyroscopeBandaid.sPrefs
+        String algorithm = XposedModule.sPrefs.getString("filter_type", "median");
+        float alpha = Float.parseFloat(XposedModule.sPrefs.getString("filter_alpha", "0.5"));
+        float threshold = Float.parseFloat(XposedModule.sPrefs
                                                    .getString("filter_min_change", "0.0"));
-        float stationaryThreshold = Float.parseFloat(GyroscopeBandaid.sPrefs
+        float stationaryThreshold = Float.parseFloat(XposedModule.sPrefs
                                                              .getString("filter_stationary_min_change", "0.0"));
-        int roundingPrecision = Integer.parseInt(GyroscopeBandaid.sPrefs
+        int roundingPrecision = Integer.parseInt(XposedModule.sPrefs
                                                          .getString("filter_round_precision", "0"));
 
         // If user changed filter size, increase the size of the array
-        int newFilterSize = Integer.parseInt(GyroscopeBandaid.sPrefs
+        int newFilterSize = Integer.parseInt(XposedModule.sPrefs
                                                      .getString("filter_size", "10"));
         mRawReadings = Util.resizeSecondDimension(mRawReadings, newFilterSize);
 

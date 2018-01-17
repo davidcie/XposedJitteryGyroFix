@@ -12,7 +12,7 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-public class GyroscopeBandaid implements IXposedHookLoadPackage {
+public class XposedModule implements IXposedHookLoadPackage {
 
     @SuppressWarnings("WeakerAccess")
     public static XSharedPreferences sPrefs;
@@ -28,7 +28,7 @@ public class GyroscopeBandaid implements IXposedHookLoadPackage {
         XposedBridge.log("GyroFilter: loading package " + lpparam.packageName);
 
         // Load preferences using Xposed, SharedPreferences() won't work inside the hook
-        sPrefs = new XSharedPreferences(GyroscopeBandaid.class.getPackage().getName(), "pref_median");
+        sPrefs = new XSharedPreferences(XposedModule.class.getPackage().getName(), "pref_median");
         sPrefs.makeWorldReadable();
 
         hookGyroInterceptor(lpparam);
