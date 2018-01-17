@@ -1,4 +1,4 @@
-package net.kajos.gyronoisefilter;
+package net.davidcie.gyroscopebandaid;
 
 import android.util.Log;
 
@@ -28,21 +28,21 @@ public class GyroscopeFilter {
         Log.d(TAG, "processSensorReadings called with " + Util.printArray(reading));
 
         // We are inside the hook so normally we have no access to the module's preferences.
-        //GyroscopeNoiseFilter.sPrefs.makeWorldReadable();
+        //GyroscopeBandaid.sPrefs.makeWorldReadable();
         // Just in case the user changed preferences without rebooting.
-        GyroscopeNoiseFilter.sPrefs.reload();
+        GyroscopeBandaid.sPrefs.reload();
 
-        String algorithm = GyroscopeNoiseFilter.sPrefs.getString("filter_type", "median");
-        float alpha = Float.parseFloat(GyroscopeNoiseFilter.sPrefs.getString("filter_alpha", "0.5"));
-        float threshold = Float.parseFloat(GyroscopeNoiseFilter.sPrefs
+        String algorithm = GyroscopeBandaid.sPrefs.getString("filter_type", "median");
+        float alpha = Float.parseFloat(GyroscopeBandaid.sPrefs.getString("filter_alpha", "0.5"));
+        float threshold = Float.parseFloat(GyroscopeBandaid.sPrefs
                                                    .getString("filter_min_change", "0.0"));
-        float stationaryThreshold = Float.parseFloat(GyroscopeNoiseFilter.sPrefs
+        float stationaryThreshold = Float.parseFloat(GyroscopeBandaid.sPrefs
                                                              .getString("filter_stationary_min_change", "0.0"));
-        int roundingPrecision = Integer.parseInt(GyroscopeNoiseFilter.sPrefs
+        int roundingPrecision = Integer.parseInt(GyroscopeBandaid.sPrefs
                                                          .getString("filter_round_precision", "0"));
 
         // If user changed filter size, increase the size of the array
-        int newFilterSize = Integer.parseInt(GyroscopeNoiseFilter.sPrefs
+        int newFilterSize = Integer.parseInt(GyroscopeBandaid.sPrefs
                                                      .getString("filter_size", "10"));
         mRawReadings = Util.resizeSecondDimension(mRawReadings, newFilterSize);
 

@@ -1,8 +1,8 @@
-package net.kajos.gyronoisefilter.hooks;
+package net.davidcie.gyroscopebandaid.hooks;
 
 import android.hardware.Sensor;
 
-import net.kajos.gyronoisefilter.GyroscopeFilter;
+import net.davidcie.gyroscopebandaid.GyroscopeFilter;
 
 import java.util.HashMap;
 

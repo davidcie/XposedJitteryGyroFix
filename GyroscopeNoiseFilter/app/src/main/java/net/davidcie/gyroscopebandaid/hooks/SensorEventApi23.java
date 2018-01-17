@@ -1,9 +1,9 @@
-package net.kajos.gyronoisefilter.hooks;
+package net.davidcie.gyroscopebandaid.hooks;
 
 import android.hardware.Sensor;
 import android.util.SparseArray;
 
-import net.kajos.gyronoisefilter.GyroscopeFilter;
+import net.davidcie.gyroscopebandaid.GyroscopeFilter;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;

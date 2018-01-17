@@ -1,13 +1,22 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 18
+    // Compile with the latest SDK to allow new compilation checks
+    // and get early warning of newly deprecated APIs.
+    compileSdkVersion 27
     buildToolsVersion "27.0.3"
 
     defaultConfig {
         applicationId "net.kajos.gyronoisefilter"
-        minSdkVersion 18
-        targetSdkVersion 19
+        // Only allow Lollipop (5.0) and above as
+        // the latest Xposed API for ROMs before that
+        // is v53 while we make use of APIs in v82.
+        // Additionally, Material Design was also intoed
+        // in API level 21.
+        minSdkVersion 21
+        // App should behave in line with expecations
+        // set in Android SDK 27.
+        targetSdkVersion 27
     }
 
     buildTypes {
@@ -19,8 +28,9 @@ android {
 }
 
 dependencies {
-    // Download from Bintray/jCenter:
+    // Download Xposed libraries and docs from Bintray/jCenter:
     // https://bintray.com/rovo89/de.robv.android.xposed/api
     provided 'de.robv.android.xposed:api:82'
-    compile 'com.android.support:support-v4:18.0.0'
+    provided 'de.robv.android.xposed:api:82:sources'
+    compile 'com.android.support:support-v4:27.0.2'
 }

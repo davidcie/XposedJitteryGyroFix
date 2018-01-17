@@ -1,10 +1,10 @@
-package net.kajos.gyronoisefilter;
+package net.davidcie.gyroscopebandaid;
 
 import android.os.Build;
 
-import net.kajos.gyronoisefilter.hooks.SensorEventApi18;
-import net.kajos.gyronoisefilter.hooks.SensorEventApi23;
-import net.kajos.gyronoisefilter.hooks.SensorEventApi24;
+import net.davidcie.gyroscopebandaid.hooks.SensorEventApi18;
+import net.davidcie.gyroscopebandaid.hooks.SensorEventApi23;
+import net.davidcie.gyroscopebandaid.hooks.SensorEventApi24;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XSharedPreferences;
@@ -12,7 +12,7 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
+public class GyroscopeBandaid implements IXposedHookLoadPackage {
 
     @SuppressWarnings("WeakerAccess")
     public static XSharedPreferences sPrefs;
@@ -28,7 +28,7 @@ public class GyroscopeNoiseFilter implements IXposedHookLoadPackage {
         XposedBridge.log("GyroFilter: loading package " + lpparam.packageName);
 
         // Load preferences using Xposed, SharedPreferences() won't work inside the hook
-        sPrefs = new XSharedPreferences(GyroscopeNoiseFilter.class.getPackage().getName(), "pref_median");
+        sPrefs = new XSharedPreferences(GyroscopeBandaid.class.getPackage().getName(), "pref_median");
         sPrefs.makeWorldReadable();
 
         hookGyroInterceptor(lpparam);

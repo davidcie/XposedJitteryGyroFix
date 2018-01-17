@@ -1,4 +1,4 @@
-package net.kajos.gyronoisefilter;
+package net.davidcie.gyroscopebandaid;
 
 import android.os.Bundle;
 import android.preference.PreferenceActivity;

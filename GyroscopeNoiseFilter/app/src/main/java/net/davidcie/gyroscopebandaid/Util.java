@@ -1,4 +1,4 @@
-package net.kajos.gyronoisefilter;
+package net.davidcie.gyroscopebandaid;
 
 class Util {
     static String printArray(float[] array) {
