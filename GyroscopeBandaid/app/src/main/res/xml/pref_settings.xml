@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
-        android:summary="@string/catpref_summary_filter"
         android:title="@string/catpref_title_filter">
         <ListPreference
             android:defaultValue="@string/filter_type_default"
-            android:entries="@array/filter_type_options"
-            android:entryValues="@array/filter_type_options_alias"
+            android:entries="@array/filter_types_labels"
+            android:entryValues="@array/filter_types_keys"
             android:key="filter_type"
             android:summary="@string/pref_summary_filter_type"
             android:title="@string/pref_title_filter_type" />
@@ -26,7 +25,6 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:summary="@string/catpref_summary_other"
         android:title="@string/catpref_title_other">
         <EditTextPreference
             android:defaultValue="@string/filter_min_change_default"
