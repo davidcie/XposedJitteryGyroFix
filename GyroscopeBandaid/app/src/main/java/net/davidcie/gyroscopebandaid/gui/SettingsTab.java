@@ -1,21 +1,19 @@
 package net.davidcie.gyroscopebandaid.gui;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
+import android.preference.PreferenceFragment;
 
 import net.davidcie.gyroscopebandaid.R;
 
-public class SettingsTab extends Fragment {
+public class SettingsTab extends PreferenceFragment {
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.xml.preferences);
+    }
+
+    /*@Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.tab_settings, container, false);
 
@@ -45,5 +43,5 @@ public class SettingsTab extends Fragment {
         });
 
         return rootView;
-    }
+    }*/
 }

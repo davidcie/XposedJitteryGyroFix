@@ -16,7 +16,7 @@ public class SettingsActivity extends PreferenceActivity {
         PreferenceManager prefMgr = getPreferenceManager();
         prefMgr.setSharedPreferencesName("pref_median");
         prefMgr.setSharedPreferencesMode(MODE_WORLD_READABLE);
-        addPreferencesFromResource(R.xml.settings);
+        addPreferencesFromResource(R.xml.preferences);
     }
 
 }
