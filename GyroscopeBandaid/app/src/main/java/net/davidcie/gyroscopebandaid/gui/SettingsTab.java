@@ -1,16 +1,57 @@
 package net.davidcie.gyroscopebandaid.gui;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
+import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.util.Log;
 
 import net.davidcie.gyroscopebandaid.R;
 
-public class SettingsTab extends PreferenceFragment {
+public class SettingsTab extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
+        final EditTextPreference test = (EditTextPreference) findPreference("filter_size");
+        test.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                test.setSummary("aaa");
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d("GyroBandaid", "Change in " + key);
+    }
+
+    @Override
+    public void onPause() {
+        Log.d("GyroBandaid", "Pause!");
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        Log.d("GyroBandaid", "Resume!");
+        super.onResume();
+    }
+
+    @Override
+    public void onStart() {
+        Log.d("GyroBandaid", "Start!");
+        super.onStart();
+    }
+
+    @Override
+    public void onStop() {
+        Log.d("GyroBandaid", "Stop!");
+        super.onStop();
     }
 
     /*@Override

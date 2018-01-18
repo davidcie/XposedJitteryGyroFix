@@ -1,31 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory
-        android:title="@string/catpref_title_filter">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" android:summary="Some summary">
+
+    <Preference
+        android:selectable="false"
+        android:summary="@string/settings_intro" />
+
+    <PreferenceCategory android:title="@string/calibration_title">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="calibration_enabled"
+            android:summary="@string/calibration_enabled"
+            android:title="@string/enabled" />
+        <EditTextPreference
+            android:defaultValue="Default value"
+            android:key="edit_text_preference_1"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="Update calibration values" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/inversion_title">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="switch_preference_1"
+            android:title="@string/enabled" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/smoothing_title">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="switch_preference_1"
+            android:title="@string/enabled" />
         <ListPreference
             android:defaultValue="@string/filter_type_default"
             android:entries="@array/filter_types_labels"
             android:entryValues="@array/filter_types_keys"
             android:key="filter_type"
             android:summary="@string/pref_summary_filter_type"
-            android:title="@string/pref_title_filter_type" />
+            android:title="Algorithm" />
         <EditTextPreference
             android:defaultValue="@string/filter_size_default"
             android:key="filter_size"
             android:maxLength="4"
             android:numeric="integer"
             android:summary="@string/pref_summary_filter_size"
-            android:title="@string/pref_title_filter_size" />
+            android:title="Sample size" />
         <EditTextPreference
             android:defaultValue="@string/filter_alpha_default"
             android:key="filter_alpha"
             android:maxLength="5"
+            android:numeric="signed"
             android:summary="@string/pref_summary_filter_alpha"
-            android:title="@string/pref_title_filter_alpha" />
+            android:title="Alpha" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:title="@string/catpref_title_other">
+    <PreferenceCategory android:title="@string/thresholding_title">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="switch_preference_1"
+            android:title="@string/enabled" />
         <EditTextPreference
             android:defaultValue="@string/filter_min_change_default"
             android:key="filter_min_change"
@@ -38,12 +71,19 @@
             android:maxLength="15"
             android:summary="@string/pref_summary_filter_stationary_min_change"
             android:title="@string/pref_title_filter_stationary_min_change" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/rounding_title">
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="switch_preference_1"
+            android:title="@string/enabled" />
         <EditTextPreference
             android:defaultValue="@string/filter_round_precision_default"
             android:key="filter_round_precision"
             android:maxLength="15"
             android:numeric="integer"
             android:summary="@string/pref_summary_filter_round_precision"
-            android:title="@string/pref_title_filter_round_precision" />
+            android:title="Decimal places" />
     </PreferenceCategory>
 </PreferenceScreen>
