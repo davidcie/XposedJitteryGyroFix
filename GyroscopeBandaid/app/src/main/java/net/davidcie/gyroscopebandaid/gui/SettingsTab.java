@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceScreen;
 import android.util.Log;
 
 import net.davidcie.gyroscopebandaid.R;
@@ -26,6 +27,14 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     }
 
     @Override
+    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
+        if (preference.getKey() == "calibration_change") {
+            Log.d("GyroBandaid", "Requesting calibration change!");
+        }
+        return super.onPreferenceTreeClick(preferenceScreen, preference);
+    }
+
+    @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.d("GyroBandaid", "Change in " + key);
     }
@@ -42,17 +51,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         super.onResume();
     }
 
-    @Override
-    public void onStart() {
-        Log.d("GyroBandaid", "Start!");
-        super.onStart();
-    }
 
-    @Override
-    public void onStop() {
-        Log.d("GyroBandaid", "Stop!");
-        super.onStop();
-    }
 
     /*@Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

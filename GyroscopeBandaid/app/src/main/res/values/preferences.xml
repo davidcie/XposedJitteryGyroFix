@@ -8,5 +8,19 @@
     <string name="filter_stationary_min_change_default">0.0</string>
     <string name="filter_round_precision_default">0</string>
 
+    <!-- Preference names -->
+    <string name="pref_calibration_enabled">calibration_enabled</string>
+    <string name="pref_calibration_values">calibration_values</string>
+    <string name="pref_inversion_enabled">inversion_enabled</string>
+    <string name="pref_inversion_axes">inversion_axes</string>
+    <string name="pref_smoothing_enabled">smoothing_enabled</string>
+    <string name="pref_smoothing_algorithm">smoothing_algorithm</string>
+    <string name="pref_smoothing_sample">smoothing_sample</string>
+    <string name="pref_smoothing_alpha">smoothing_alpha</string>
+    <string name="pref_thresholding_enabled">thresholding_enabled</string>
+    <string name="pref_thresholding_static">thresholding_static</string>
+    <string name="pref_thresholding_dynamic">thresholding_dynamic</string>
+    <string name="pref_rounding_enabled">rounding_enabled</string>
+    <string name="pref_rounding_decimalplaces">rounding_decimalplaces</string>
 
 </resources>

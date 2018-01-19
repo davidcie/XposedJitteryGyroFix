@@ -49,7 +49,7 @@
         <item>lowpass</item>
         <item>addsmooth</item>
     </string-array>
-    <string name="smoothing_sample_size">Number of samples</string>
+    <string name="smoothing_sample">Number of samples</string>
     <string name="smoothing_alpha">Smoothing strength</string>
     <!-- smoothing_alpha_summary will be set to currently selected value -->
     <string name="smoothing_explanation">Select the amount of smoothing to apply. Only used by more advanced filters. Suggested starting point is about half way.</string>

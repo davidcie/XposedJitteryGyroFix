@@ -10,50 +10,48 @@
     <PreferenceCategory android:title="@string/calibration_title">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="calibration_enabled"
+            android:key="@string/pref_calibration_enabled"
             android:summary="@string/calibration_disabled"
             android:title="@string/enabled" />
-        <EditTextPreference
-            android:defaultValue="Default value"
-            android:key="calibration_change"
-            android:selectAllOnFocus="true"
-            android:singleLine="true"
-            android:title="@string/calibration_change" />
+        <Preference
+            android:key="@string/pref_calibration_values"
+            android:summary="@string/calibration_summary"
+            android:title="@string/calibration_change"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/inversion_title">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="inversion_enabled"
+            android:key="@string/pref_inversion_enabled"
             android:summary="@string/inversion_disabled"
             android:title="@string/enabled" />
         <MultiSelectListPreference
             android:entries="@array/inversion_axes_entries"
             android:entryValues="@array/inversion_axes_values"
-            android:key="inversion_change"
+            android:key="@string/pref_inversion_axes"
             android:title="@string/inversion_change" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/smoothing_title">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="smoothing_enable"
+            android:key="@string/pref_smoothing_enabled"
             android:summary="@string/smoothing_disabled"
             android:title="@string/enabled" />
         <ListPreference
             android:defaultValue="@string/filter_type_default"
             android:entries="@array/smoothing_algorithm_entries"
             android:entryValues="@array/smoothing_algorithm_values"
-            android:key="filter_type"
+            android:key="@string/pref_smoothing_algorithm"
             android:title="@string/smoothing_algorithm" />
         <EditTextPreference
             android:defaultValue="@string/filter_size_default"
-            android:key="filter_size"
+            android:key="@string/pref_smoothing_sample"
             android:maxLength="4"
             android:numeric="integer"
-            android:title="@string/smoothing_sample_size" />
+            android:title="@string/smoothing_sample" />
         <net.jayschwa.android.preference.SliderPreference
-            android:key="filter_alpha"
+            android:key="@string/pref_smoothing_alpha"
             android:title="@string/smoothing_alpha"
             android:defaultValue="0.5"
             android:dialogMessage="@string/smoothing_explanation" />
@@ -62,18 +60,18 @@
     <PreferenceCategory android:title="@string/thresholding_title">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="thresholding_enabled"
+            android:key="@string/pref_thresholding_enabled"
             android:summary="@string/thresholding_disabled"
             android:title="@string/enabled" />
         <EditTextPreference
             android:defaultValue="0.0"
-            android:key="thresholding_static"
+            android:key="@string/pref_thresholding_static"
             android:maxLength="15"
             android:summary="@string/thresholding_static_summary"
             android:title="@string/thresholding_static" />
         <EditTextPreference
             android:defaultValue="@string/filter_min_change_default"
-            android:key="thresholding_dynamic"
+            android:key="@string/pref_thresholding_dynamic"
             android:maxLength="15"
             android:summary="@string/thresholding_dynamic_summary"
             android:title="@string/thresholding_dynamic" />
@@ -82,12 +80,12 @@
     <PreferenceCategory android:title="@string/rounding_title">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="rounding_enabled"
+            android:key="@string/rounding_enabled"
             android:summary="@string/rounding_disabled"
             android:title="@string/enabled" />
         <EditTextPreference
             android:defaultValue="@string/filter_round_precision_default"
-            android:key="rounding_decimalplaces"
+            android:key="@string/pref_rounding_decimalplaces"
             android:maxLength="15"
             android:numeric="integer"
             android:title="@string/rounding_decimalplaces" />
