@@ -35,8 +35,11 @@ dependencies {
     compile 'com.android.support:support-v4:27.0.2'
     // support-v13 needed for FragmentPagerAdapter to allow ViewPager to work with native Fragments
     compile 'com.android.support:support-v13:27.0.2'
-
+    // Animated play/pause/stop button
     compile 'com.github.timrijckaert:FloatingMusicActionButton:v2.0.4'
+    // Slider preference
+    compile 'com.github.jayschwa:AndroidSliderPreference:v1.0.1'
+    // Other
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.support:design:27.0.2'
     //compile 'com.android.support:appcompat-v7:27.0.2'

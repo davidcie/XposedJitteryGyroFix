@@ -14,7 +14,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.preferences);
+        addPreferencesFromResource(R.xml.tab_preferences);
         final EditTextPreference test = (EditTextPreference) findPreference("filter_size");
         test.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
