@@ -39,13 +39,13 @@
             android:summary="@string/smoothing_disabled"
             android:title="@string/enabled" />
         <ListPreference
-            android:defaultValue="@string/filter_type_default"
+            android:defaultValue="@string/pref_smoothing_algorithm_default"
             android:entries="@array/smoothing_algorithm_entries"
             android:entryValues="@array/smoothing_algorithm_values"
             android:key="@string/pref_smoothing_algorithm"
             android:title="@string/smoothing_algorithm" />
         <EditTextPreference
-            android:defaultValue="@string/filter_size_default"
+            android:defaultValue="@string/pref_smoothing_sample_default"
             android:key="@string/pref_smoothing_sample"
             android:maxLength="4"
             android:numeric="integer"
@@ -53,7 +53,7 @@
         <net.jayschwa.android.preference.SliderPreference
             android:key="@string/pref_smoothing_alpha"
             android:title="@string/smoothing_alpha"
-            android:defaultValue="0.5"
+            android:defaultValue="@string/pref_smoothing_alpha_default"
             android:dialogMessage="@string/smoothing_explanation" />
     </PreferenceCategory>
 
@@ -63,6 +63,7 @@
             android:key="@string/pref_thresholding_enabled"
             android:summary="@string/thresholding_disabled"
             android:title="@string/enabled" />
+        <!-- TODO: make thresholding a more meaningful value, eg. 0-10° and translate to radians -->
         <EditTextPreference
             android:defaultValue="0.0"
             android:key="@string/pref_thresholding_static"
@@ -70,7 +71,7 @@
             android:summary="@string/thresholding_static_summary"
             android:title="@string/thresholding_static" />
         <EditTextPreference
-            android:defaultValue="@string/filter_min_change_default"
+            android:defaultValue="0.0"
             android:key="@string/pref_thresholding_dynamic"
             android:maxLength="15"
             android:summary="@string/thresholding_dynamic_summary"
@@ -84,7 +85,7 @@
             android:summary="@string/rounding_disabled"
             android:title="@string/enabled" />
         <EditTextPreference
-            android:defaultValue="@string/filter_round_precision_default"
+            android:defaultValue="0"
             android:key="@string/pref_rounding_decimalplaces"
             android:maxLength="15"
             android:numeric="integer"
