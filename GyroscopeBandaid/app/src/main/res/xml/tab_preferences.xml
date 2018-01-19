@@ -11,7 +11,8 @@
         <SwitchPreference
             android:defaultValue="false"
             android:key="@string/pref_calibration_enabled"
-            android:summary="@string/calibration_disabled"
+            android:summaryOn="@string/calibration_enabled"
+            android:summaryOff="@string/calibration_disabled"
             android:title="@string/enabled" />
         <Preference
             android:key="@string/pref_calibration_values"
@@ -23,7 +24,8 @@
         <SwitchPreference
             android:defaultValue="false"
             android:key="@string/pref_inversion_enabled"
-            android:summary="@string/inversion_disabled"
+            android:summaryOn="@string/inversion_enabled"
+            android:summaryOff="@string/inversion_disabled"
             android:title="@string/enabled" />
         <MultiSelectListPreference
             android:entries="@array/inversion_axes_entries"
@@ -36,7 +38,8 @@
         <SwitchPreference
             android:defaultValue="false"
             android:key="@string/pref_smoothing_enabled"
-            android:summary="@string/smoothing_disabled"
+            android:summaryOn="@string/smoothing_enabled"
+            android:summaryOff="@string/smoothing_disabled"
             android:title="@string/enabled" />
         <ListPreference
             android:defaultValue="@string/pref_smoothing_algorithm_default"
@@ -61,13 +64,15 @@
         <SwitchPreference
             android:defaultValue="false"
             android:key="@string/pref_thresholding_enabled"
-            android:summary="@string/thresholding_disabled"
+            android:summaryOn="@string/thresholding_enabled"
+            android:summaryOff="@string/thresholding_disabled"
             android:title="@string/enabled" />
         <!-- TODO: make thresholding a more meaningful value, eg. 0-10° and translate to radians -->
         <EditTextPreference
             android:defaultValue="0.0"
             android:key="@string/pref_thresholding_static"
             android:maxLength="15"
+            android:numeric="signed"
             android:summary="@string/thresholding_static_summary"
             android:title="@string/thresholding_static" />
         <EditTextPreference
@@ -82,7 +87,8 @@
         <SwitchPreference
             android:defaultValue="false"
             android:key="@string/rounding_enabled"
-            android:summary="@string/rounding_disabled"
+            android:summaryOn="@string/rounding_enabled"
+            android:summaryOff="@string/rounding_disabled"
             android:title="@string/enabled" />
         <EditTextPreference
             android:defaultValue="0"

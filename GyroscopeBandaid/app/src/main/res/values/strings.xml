@@ -36,7 +36,6 @@
     <string name="smoothing_enabled">Processing consecutive readings with an algorithm to reduce jitter.</string>
     <string name="smoothing_disabled">Treating each sensor reading individually.</string>
     <string name="smoothing_algorithm">Algorithm</string>
-    <!-- smoothing_summary will be set to currently selected value -->
     <string-array name="smoothing_algorithm_entries">
         <item>Median</item>
         <item>Mean (running average)</item>
@@ -51,7 +50,6 @@
     </string-array>
     <string name="smoothing_sample">Number of samples</string>
     <string name="smoothing_alpha">Smoothing strength</string>
-    <!-- smoothing_alpha_summary will be set to currently selected value -->
     <string name="smoothing_explanation">Select the amount of smoothing to apply. Only used by more advanced filters. Suggested starting point is about half way.</string>
 
     <!-- Thresholding -->
@@ -59,16 +57,14 @@
     <string name="thresholding_enabled">Interpreting smaller sensor readings as noise and outputting zero instead.</string>
     <string name="thresholding_disabled">Taking into account even smaller sensor readings.</string>
     <string name="thresholding_static">Static</string>
-    <string name="thresholding_static_summary">Require a more dynamic motion for your device to <i>start</i> reporting movement. Current value: $1%d.</string>
+    <string name="thresholding_static_summary">Require a more dynamic motion for your device to <i>start</i> reporting movement. Current value: %s.</string>
     <string name="thresholding_dynamic">Dynamic</string>
-    <string name="thresholding_dynamic_summary">Require a more dynamic motion for your device to <i>continue</i> reporting movement. Current value: $1%d.</string>
-
+    <string name="thresholding_dynamic_summary">Require a more dynamic motion for your device to <i>continue</i> reporting movement. Current value: %s.</string>
 
     <!-- Rounding -->
     <string name="rounding_title">Rounding</string>
     <string name="rounding_enabled">Round values to reduce small jitter and reduce CPU load.</string>
     <string name="rounding_disabled">Output computed values as-is.</string>
     <string name="rounding_decimalplaces">Decimal places</string>
-    <!-- rounding_summary will be set to currently selected value -->
 
 </resources>

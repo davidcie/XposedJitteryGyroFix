@@ -1,6 +1,6 @@
 package net.davidcie.gyroscopebandaid;
 
-class Util {
+public class Util {
     static String printArray(float[] array) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < array.length; i++) {
@@ -44,5 +44,11 @@ class Util {
         }
 
         return newArray;
+    }
+
+    public static boolean isValidFloat(Object value, Float minValue, Float maxValue) {
+        if (value == null) return false;
+        Float test = Float.valueOf(value.toString());
+        return !(test.isNaN() || test.isInfinite() || test < minValue || test > maxValue);
     }
 }
