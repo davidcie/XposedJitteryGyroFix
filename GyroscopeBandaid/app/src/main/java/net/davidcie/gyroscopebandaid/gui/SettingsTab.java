@@ -1,7 +1,10 @@
 package net.davidcie.gyroscopebandaid.gui;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -9,6 +12,9 @@ import android.preference.PreferenceScreen;
 import android.text.Html;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.common.base.Joiner;
 
@@ -38,8 +44,73 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
 
     @Override
     public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-        if (Objects.equals(preference.getKey(), "calibration_change")) {
-            Log.d("GyroBandaid", "Requesting calibration change!");
+        if (Objects.equals(preference.getKey(), getString(R.string.pref_calibration_values))) {
+            // Needed to make a Snackbar
+            LayoutInflater inflater = getActivity().getLayoutInflater();
+
+            // Create a dialog to allow editing calibration values
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setMessage(R.string.calibration_dialog_message).setTitle(getString(R.string.calibration_change));
+            //final View dialogContent = inflater.inflate(R.layout.calibration, null);
+            //builder.setView(dialogContent);
+            builder.setView(R.layout.calibration);
+            builder.setPositiveButton(R.string.ok, null);
+            builder.setNegativeButton(R.string.cancel, null);
+            builder.setNeutralButton(R.string.calibration_perform, null);
+            final AlertDialog dialog = builder.create();
+
+            // Define button actions
+            final View.OnClickListener okAction = new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d("GyroBandaid", "Clicked OK");
+                    dialog.dismiss();
+                }
+            };
+            final View.OnClickListener cancelAction = new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d("GyroBandaid", "Clicked Cancel");
+                    dialog.cancel();
+                }
+            };
+            final View.OnClickListener calibrateAction = new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d("GyroBandaid", "Clicked Calibrate");
+                    //Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
+                    runCalibration();
+                    /*Snackbar.make(view, "Please place your phone on a flat surface, calibration will start in a few seconds.", Snackbar.LENGTH_LONG)
+                            .setAction("Cancel", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Log.d("GyroBandaid", "User just clicked cancel");
+                                }
+                            })
+                            .addCallback(new Snackbar.Callback() {
+                                @Override
+                                public void onDismissed(Snackbar transientBottomBar, int event) {
+                                    if (event == DISMISS_EVENT_TIMEOUT) {
+                                        Log.d("GyroBandaid", "Disappeared, we can proceed!");
+                                    } else if (event == DISMISS_EVENT_ACTION) {
+                                        Log.d("GyroBandaid", "Cancelled :-(");
+                                    }
+                                }
+                            })
+                            .show();*/
+                }
+            };
+
+            // Assign button actions
+            dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface dialogInterface) {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(okAction);
+                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(cancelAction);
+                    dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(calibrateAction);
+                }
+            });
+            dialog.show();
         }
         return super.onPreferenceTreeClick(preferenceScreen, preference);
     }
@@ -176,6 +247,95 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     private Preference findPreferenceById(int resourceId) {
         return findPreference(getString(resourceId));
     }
+
+    // pause any corrections by setting a setting?
+    // in a background task gather ~100 gyro readings, updating progress as we go
+    // private class DownloadFilesTask extends AsyncTask<URL, Integer, Long> {
+    // show toast, update values
+
+
+    private class GyroCalibrator extends AsyncTask<Void, Integer, Float[]> {
+
+        @Override
+        protected void onPreExecute() {
+            // add a progress bar to dialog UI
+            // ProgressBar.setVisibility(View.INVISIBLE)
+        }
+
+        @Override
+        protected Float[] doInBackground(Void... voids) {
+            // disable corrections
+            // enable gyroscope
+            // gather 100 readings in a loop, updating progress
+            final int numReadings = 100;
+            Float[] axes = new Float[3];
+            for (int r = 0; r < numReadings; r++) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                axes[0] += 0.1f;
+                axes[1] += 0.1f;
+                axes[2] += 0.1f;
+                if (isCancelled()) break;
+                publishProgress(r);
+            }
+            axes[0] /= numReadings;
+            axes[1] /= numReadings;
+            axes[2] /= numReadings;
+            return axes;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+            //setProgressPercent(progress[0]);
+        }
+
+        protected void onPostExecute(Float[] result) {
+            // return the three axes
+            // hide progress bar
+        }
+    }
+
+    private void runCalibration() {
+        Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3500); // == Toast.LENGTH_LONG
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                Toast.makeText(getActivity(), R.string.calibration_dialog_progress, Toast.LENGTH_LONG).show();
+
+            }
+        });
+        t.start();
+    }
+
+    /*private void runCalibration() {
+        View rootView = inflater.inflate(R.layout.tab_settings, container, false);
+        Snackbar.make(view, "Please place your phone on a flat surface, calibration will start in a few seconds.", Snackbar.LENGTH_LONG)
+                .setAction("Cancel", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.d("GyroBandaid", "User just clicked cancel");
+                    }
+                })
+                .addCallback(new Snackbar.Callback() {
+                    @Override
+                    public void onDismissed(Snackbar transientBottomBar, int event) {
+                        if (event == DISMISS_EVENT_TIMEOUT) {
+                            Log.d("GyroBandaid", "Disappeared, we can proceed!");
+                        } else if (event == DISMISS_EVENT_ACTION) {
+                            Log.d("GyroBandaid", "Cancelled :-(");
+                        }
+                    }
+                })
+                .show();
+    }*/
 
     /*@Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

@@ -3,6 +3,9 @@ package net.davidcie.gyroscopebandaid.extensions;
 import android.content.Context;
 import android.preference.EditTextPreference;
 import android.util.AttributeSet;
+import android.util.Log;
+
+import java.util.Objects;
 
 public class EditFloatPreference extends EditTextPreference {
 
@@ -24,9 +27,13 @@ public class EditFloatPreference extends EditTextPreference {
 
     @Override
     protected String getPersistedString(final String defaultReturnValue) {
+        Log.d("GyroBandaid", "getPersistedString defaultReturnValue=" + Objects.toString(defaultReturnValue));
         Float defaultAsFloat;
         try {
-            defaultAsFloat = Float.parseFloat(defaultReturnValue);
+            if (defaultReturnValue != null)
+                defaultAsFloat = Float.parseFloat(defaultReturnValue);
+            else
+                defaultAsFloat = 0.0f;
         } catch (NumberFormatException e) {
             // No default is set
             defaultAsFloat = 0.0f;
@@ -39,6 +46,7 @@ public class EditFloatPreference extends EditTextPreference {
     @Override
     protected boolean persistString(final String value) {
         // TODO: check for empty string and clear preference?
+        Log.d("GyroBandaid", "persistString value=" + Objects.toString(value));
         try {
             return persistFloat(Float.parseFloat(value));
         } catch (NumberFormatException e) {

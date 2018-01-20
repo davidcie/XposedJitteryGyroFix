@@ -8,6 +8,9 @@
     <!-- Preference names -->
     <string name="pref_calibration_enabled">calibration_enabled</string>
     <string name="pref_calibration_values">calibration_values</string>
+    <string name="pref_calibration_value_x">calibration_value_x</string>
+    <string name="pref_calibration_value_y">calibration_value_y</string>
+    <string name="pref_calibration_value_z">calibration_value_z</string>
 
     <string name="pref_inversion_enabled">inversion_enabled</string>
     <string name="pref_inversion_axes">inversion_axes</string>
