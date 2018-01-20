@@ -2,8 +2,8 @@
 <resources>
     <!-- Defaults -->
     <string name="pref_smoothing_algorithm_default">median</string>
-    <string name="pref_smoothing_sample_default">10</string>
-    <string name="pref_smoothing_alpha_default">0.5</string>
+    <integer name="pref_smoothing_sample_default">10</integer>
+    <item name="pref_smoothing_alpha_default" format="float" type="string">0.5</item>
 
     <!-- Preference names -->
     <string name="pref_calibration_enabled">calibration_enabled</string>

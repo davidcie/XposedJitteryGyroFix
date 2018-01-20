@@ -44,5 +44,7 @@ dependencies {
     compile 'com.android.support:design:27.0.2'
     //compile 'com.android.support:appcompat-v7:27.0.2'
     //compile 'com.android.support:preference-v14:27.0.2'
+    // Some useful utility functions
+    compile group: 'com.google.guava', name: 'guava', version: '23.5-android'
 }
 

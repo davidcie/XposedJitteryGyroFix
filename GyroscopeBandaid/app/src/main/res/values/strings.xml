@@ -57,9 +57,9 @@
     <string name="thresholding_enabled">Interpreting smaller sensor readings as noise and outputting zero instead.</string>
     <string name="thresholding_disabled">Taking into account even smaller sensor readings.</string>
     <string name="thresholding_static">Static</string>
-    <string name="thresholding_static_summary">Require a more dynamic motion for your device to <i>start</i> reporting movement. Current value: %s.</string>
+    <string name="thresholding_static_summary">Require a more dynamic motion for your device to &lt;b>start&lt;/b> reporting movement. &lt;i>Current value: %s.&lt;/i></string>
     <string name="thresholding_dynamic">Dynamic</string>
-    <string name="thresholding_dynamic_summary">Require a more dynamic motion for your device to <i>continue</i> reporting movement. Current value: %s.</string>
+    <string name="thresholding_dynamic_summary">Require a more dynamic motion for your device to &lt;b>continue&lt;/b> reporting movement. &lt;i>Current value: %s.&lt;/i></string>
 
     <!-- Rounding -->
     <string name="rounding_title">Rounding</string>

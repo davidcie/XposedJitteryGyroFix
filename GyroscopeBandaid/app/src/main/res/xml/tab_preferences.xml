@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:summary="Some summary">
 
     <Preference
@@ -47,8 +46,8 @@
             android:entryValues="@array/smoothing_algorithm_values"
             android:key="@string/pref_smoothing_algorithm"
             android:title="@string/smoothing_algorithm" />
-        <EditTextPreference
-            android:defaultValue="@string/pref_smoothing_sample_default"
+        <net.davidcie.gyroscopebandaid.extensions.EditIntegerPreference
+            android:defaultValue="@integer/pref_smoothing_sample_default"
             android:key="@string/pref_smoothing_sample"
             android:maxLength="4"
             android:numeric="integer"
@@ -68,17 +67,18 @@
             android:summaryOff="@string/thresholding_disabled"
             android:title="@string/enabled" />
         <!-- TODO: make thresholding a more meaningful value, eg. 0-10° and translate to radians -->
-        <EditTextPreference
+        <net.davidcie.gyroscopebandaid.extensions.EditFloatPreference
             android:defaultValue="0.0"
             android:key="@string/pref_thresholding_static"
             android:maxLength="15"
             android:numeric="signed"
             android:summary="@string/thresholding_static_summary"
             android:title="@string/thresholding_static" />
-        <EditTextPreference
+        <net.davidcie.gyroscopebandaid.extensions.EditFloatPreference
             android:defaultValue="0.0"
             android:key="@string/pref_thresholding_dynamic"
             android:maxLength="15"
+            android:numeric="signed"
             android:summary="@string/thresholding_dynamic_summary"
             android:title="@string/thresholding_dynamic" />
     </PreferenceCategory>
@@ -90,7 +90,7 @@
             android:summaryOn="@string/rounding_enabled"
             android:summaryOff="@string/rounding_disabled"
             android:title="@string/enabled" />
-        <EditTextPreference
+        <net.davidcie.gyroscopebandaid.extensions.EditIntegerPreference
             android:defaultValue="0"
             android:key="@string/pref_rounding_decimalplaces"
             android:maxLength="15"

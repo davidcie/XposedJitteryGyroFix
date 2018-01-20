@@ -24,6 +24,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // TODO: Initialize preferences
+        //PreferenceManager.setDefaultValues(this, R.xml.advanced_preferences, false);
+
         // Set up the ViewPager with the sections adapter.
         ViewPager viewPager = findViewById(R.id.pager);
         viewPager.setAdapter(new MyPagerAdapter(getFragmentManager()));

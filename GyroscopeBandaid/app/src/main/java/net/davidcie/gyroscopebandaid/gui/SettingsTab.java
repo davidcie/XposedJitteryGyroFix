@@ -1,14 +1,16 @@
 package net.davidcie.gyroscopebandaid.gui;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
+import android.text.Html;
 import android.util.Log;
+import android.util.TypedValue;
+
+import com.google.common.base.Joiner;
 
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
@@ -16,8 +18,7 @@ import net.davidcie.gyroscopebandaid.Util;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
-
-import kotlin.Suppress;
+import java.util.Set;
 
 public class SettingsTab extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -25,108 +26,141 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.tab_preferences);
-        setChangeListeners();
-
-        Context hostActivity = getActivity();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(hostActivity);
-        updateAllSummaries(prefs);
+        updatePreferenceSummaries();
+        setValidators();
     }
 
-    private void setChangeListeners() {
-        Preference.OnPreferenceChangeListener summaryUpdater = new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                updateSummary(preference, newValue);
-                return true;
-            }
-        };
-        Preference.OnPreferenceChangeListener zeroToOneValidatorUpdater = new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                if (!Util.isValidFloat(newValue, 0.0f, 1.0f)) {
-                    Log.d("GyroBandaid", "Invalid value of " + newValue.toString());
-                    return false;
-                }
-                updateSummary(preference, newValue);
-                return true;
-            }
-        };
-        Preference.OnPreferenceChangeListener thresholdValidatorUpdater = new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                if (!Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE)) {
-                    Log.d("GyroBandaid", "Invalid value of " + newValue.toString());
-                    return false;
-                }
-                updateSummary(preference, newValue);
-                return true;
-            }
-        };
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d("GyroBandaid", "Change in " + key);
+        updatePreferenceSummary(sharedPreferences, key);
+    }
 
-        // These properties do not need any validation, just summary update
-        ArrayList<Preference> simpleSummaryUpdate = new ArrayList<>();
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_calibration_values));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_smoothing_sample));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_rounding_decimalplaces));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_smoothing_algorithm));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_inversion_axes));
-        for (Preference preference : simpleSummaryUpdate) {
-            preference.setOnPreferenceChangeListener(summaryUpdater);
+    @Override
+    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
+        if (Objects.equals(preference.getKey(), "calibration_change")) {
+            Log.d("GyroBandaid", "Requesting calibration change!");
+        }
+        return super.onPreferenceTreeClick(preferenceScreen, preference);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+    }
+
+    private void updatePreferenceSummaries() {
+        SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+        ArrayList<String> keysToUpdate = new ArrayList<>();
+        keysToUpdate.add(getString(R.string.pref_calibration_values));
+        keysToUpdate.add(getString(R.string.pref_inversion_axes));
+        keysToUpdate.add(getString(R.string.pref_smoothing_algorithm));
+        keysToUpdate.add(getString(R.string.pref_smoothing_sample));
+        keysToUpdate.add(getString(R.string.pref_smoothing_alpha));
+        keysToUpdate.add(getString(R.string.pref_thresholding_static));
+        keysToUpdate.add(getString(R.string.pref_thresholding_dynamic));
+        keysToUpdate.add(getString(R.string.pref_rounding_decimalplaces));
+        for (String key : keysToUpdate) updatePreferenceSummary(sharedPreferences, key);
+    }
+
+    private void updatePreferenceSummary(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.pref_calibration_values))) {
+            // TODO: update calibration summary
         }
 
-        // Validate than update summary: alpha can only be 0.0 to 1.0
-        findPreferenceById(R.string.pref_smoothing_alpha).setOnPreferenceChangeListener(zeroToOneValidatorUpdater);
+        else if (key.equals(getString(R.string.pref_inversion_axes))) {
+            // Translate from values to labels
+            Set<String> axisValues = sharedPreferences.getStringSet(key, new HashSet<String>());
+            ArrayList<String> axisEntries = new ArrayList<>(axisValues.size());
+            for (String axisValue : axisValues)
+                axisEntries.add(getEntryFromValue(
+                        R.array.inversion_axes_entries,
+                        R.array.inversion_axes_values,
+                        axisValue));
+            // Produce a comma-separated list and assign to summary
+            String summary = Joiner.on(", ").join(axisEntries);
+            findPreference(key).setSummary(summary.length() > 0
+                                                   ? summary
+                                                   : getString(R.string.inversion_summary_none));
+        }
 
-        // Validate than update summary: thresholds only be 0.0 to infinity
-        findPreferenceById(R.string.pref_thresholding_static).setOnPreferenceChangeListener(thresholdValidatorUpdater);
-        findPreferenceById(R.string.pref_thresholding_dynamic).setOnPreferenceChangeListener(thresholdValidatorUpdater);
+        else if (key.equals(getString(R.string.pref_smoothing_algorithm))) {
+            String defaultValue = getString(R.string.pref_smoothing_algorithm_default);
+            String value = sharedPreferences.getString(key, defaultValue);
+            String entry = getEntryFromValue(
+                    R.array.smoothing_algorithm_entries,
+                    R.array.smoothing_algorithm_values,
+                    value);
+            findPreference(key).setSummary(entry);
+        }
 
+        else if (key.equals(getString(R.string.pref_smoothing_sample))) {
+            int defaultValue = getResources().getInteger(R.integer.pref_smoothing_sample_default);
+            int value = sharedPreferences.getInt(key, defaultValue);
+            findPreference(key).setSummary(Integer.toString(value));
+        }
+
+        else if (key.equals(getString(R.string.pref_smoothing_alpha))) {
+            TypedValue defaultValue = new TypedValue();
+            getResources().getValue(R.string.pref_smoothing_alpha_default, defaultValue, true);
+            Float value = sharedPreferences.getFloat(key, defaultValue.getFloat()) * 100;
+            @SuppressLint("DefaultLocale")
+            String summary = String.format("%.0f%%", value);
+            findPreference(key).setSummary(summary);
+        }
+
+        else if (key.equals(getString(R.string.pref_thresholding_static))) {
+            Float value = sharedPreferences.getFloat(key, 0.0f);
+            String summary = getString(R.string.thresholding_static_summary, Float.toString(value));
+            findPreference(key).setSummary(Html.fromHtml(summary));
+        }
+
+        else if (key.equals(getString(R.string.pref_thresholding_dynamic))) {
+            Float value = sharedPreferences.getFloat(key, 0.0f);
+            String summary = getString(R.string.thresholding_dynamic_summary, Float.toString(value));
+            findPreference(key).setSummary(Html.fromHtml(summary));
+        }
+
+        else if (key.equals(getString(R.string.pref_rounding_decimalplaces))) {
+            int value = sharedPreferences.getInt(key, 0);
+            findPreference(key).setSummary(Integer.toString(value));
+        }
+    }
+
+    private void setValidators() {
         // TODO: validate calibration values!
-    }
 
-    private Preference findPreferenceById(int resourceId) {
-        return findPreference(getString(resourceId));
-    }
-
-    @SuppressLint("DefaultLocale")
-    private void updateSummary(Preference preference, Object newValue) {
-        Log.d("GyroBandaid", "Updating summary for " + preference.getKey() + ", got " + newValue.toString() + " (instance of " +
-                  newValue.getClass().getName() + ")");
-        String key = preference.getKey();
-
-        ArrayList<String> simpleSummaries = new ArrayList<>();
-        simpleSummaries.add(getString(R.string.pref_calibration_values));
-        simpleSummaries.add(getString(R.string.pref_smoothing_sample));
-        simpleSummaries.add(getString(R.string.pref_rounding_decimalplaces));
-
-        if (simpleSummaries.contains(key)) {
-            preference.setSummary(newValue.toString());
-        } else if (Objects.equals(key, getString(R.string.pref_smoothing_alpha))) {
-            preference.setSummary(String.format("%d%%", (int) (((Float) newValue) * 100)));
-        } else if (Objects.equals(key, getString(R.string.pref_smoothing_algorithm))) {
-            int entriesResId = R.array.smoothing_algorithm_entries;
-            int valuesResId = R.array.smoothing_algorithm_values;
-            String entry = getEntryFromValue(entriesResId, valuesResId, newValue.toString());
-            preference.setSummary(entry);
-        } else if (Objects.equals(key, getString(R.string.pref_inversion_axes))) {
-            HashSet<String> axes = (HashSet<String>) newValue;
-            boolean first = true;
-            StringBuilder summaryBuilder = new StringBuilder();
-            for (String axisValue : axes) {
-                String entry = getEntryFromValue(R.array.inversion_axes_entries, R.array.inversion_axes_values, axisValue);
-                if (entry != null) {
-                    if (first) first = false;
-                    else summaryBuilder.append(", ");
-                    summaryBuilder.append(entry);
-                }
+        // Alpha can only be 0.0 to 1.0
+        findPreferenceById(R.string.pref_smoothing_alpha).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                // TODO: show a notification
+                return Util.isValidFloat(newValue, 0.0f, 1.0f);
             }
-            String summary = summaryBuilder.toString();
-            preference.setSummary(summary.length() > 0 ? summary : getString(R.string.inversion_summary_none));
-        } else if (Objects.equals(key, getString(R.string.pref_thresholding_static))) {
-            preference.setSummary(getString(R.string.thresholding_static_summary, newValue));
-        } else if (Objects.equals(key, getString(R.string.pref_thresholding_dynamic))) {
-            preference.setSummary(getString(R.string.thresholding_dynamic_summary, newValue));
-        }
+        });
+
+        // Static threshold can only be 0.0 to infinity
+        findPreferenceById(R.string.pref_thresholding_static).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                return Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE);
+            }
+        });
+
+        // Dynamic threshold can only be 0.0 to infinity
+        findPreferenceById(R.string.pref_thresholding_dynamic).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                return Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE);
+            }
+        });
     }
 
     private String getEntryFromValue(int entriesResId, int valuesResId, String value) {
@@ -139,47 +173,8 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         return null;
     }
 
-    private void updateAllSummaries(SharedPreferences prefs) {
-        ArrayList<Preference> simpleSummaryUpdate = new ArrayList<>();
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_calibration_values));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_smoothing_sample));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_rounding_decimalplaces));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_smoothing_algorithm));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_inversion_axes));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_smoothing_alpha));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_thresholding_static));
-        simpleSummaryUpdate.add(findPreferenceById(R.string.pref_thresholding_dynamic));
-        for (Preference preference : simpleSummaryUpdate) {
-            //updateSummary(preference, prefs.getString());
-        }
-
-        // Calibration
-        //temp = ((SwitchPreference) findPreferenceById(R.string.pref_calibration_enabled)).
-    }
-
-    @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-        if (Objects.equals(preference.getKey(), "calibration_change")) {
-            Log.d("GyroBandaid", "Requesting calibration change!");
-        }
-        return super.onPreferenceTreeClick(preferenceScreen, preference);
-    }
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d("GyroBandaid", "Change in " + key);
-    }
-
-    @Override
-    public void onPause() {
-        Log.d("GyroBandaid", "Pause!");
-        super.onPause();
-    }
-
-    @Override
-    public void onResume() {
-        Log.d("GyroBandaid", "Resume!");
-        super.onResume();
+    private Preference findPreferenceById(int resourceId) {
+        return findPreference(getString(resourceId));
     }
 
     /*@Override
@@ -212,5 +207,18 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         });
 
         return rootView;
+
+R.string.pref_calibration_values
+
+R.string.pref_inversion_axes
+
+R.string.pref_smoothing_algorithm
+R.string.pref_smoothing_sample
+R.string.pref_smoothing_alpha
+
+R.string.pref_thresholding_static
+R.string.pref_thresholding_dynamic
+
+R.string.pref_rounding_decimalplaces
     }*/
 }
