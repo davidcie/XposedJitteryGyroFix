@@ -7,26 +7,34 @@
     android:paddingEnd="?dialogPreferredPadding">
 
     <EditText
-        android:id="@+id/edit_1"
+        android:id="@+id/edit_calibration_x"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:hint="X-axis"
-        android:inputType="textPersonName" />
+        android:inputType="numberSigned" />
 
     <EditText
-        android:id="@+id/edit_2"
+        android:id="@+id/edit_calibration_y"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:hint="Y-axis"
-        android:inputType="textPersonName" />
+        android:inputType="numberSigned" />
 
     <EditText
-        android:id="@+id/edit_3"
+        android:id="@+id/edit_calibration_z"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:hint="Z-axis"
-        android:inputType="textPersonName" />
+        android:inputType="numberSigned" />
+
+    <ProgressBar
+        android:id="@+id/calibrationProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:visibility="invisible" />
 </LinearLayout>

@@ -14,12 +14,11 @@
     <string name="calibration_enabled">Using values below to offset hardware readings by a specified amount.</string>
     <string name="calibration_disabled">No constant offset applied to hardware readings.</string>
     <string name="calibration_change">Change calibration values</string>
-    <string name="calibration_summary">X=$1%d Y=$2%d Z=$3%d</string><!-- TODO: change to %.2f -->
+    <string name="calibration_summary">X=%.5f Y=%.5f Z=%.5f</string>
     <string name="calibration_perform">Calibrate</string>
     <string name="calibration_dialog_message">Specify values for the X, Y and Z axes manually or click <i>Calibrate</i> to estimate them automatically.</string>
     <string name="calibration_dialog_prepare">Keep your phone still, calibration will start in a few seconds.</string>
-    <string name="calibration_dialog_progress">Getting stationary sensor readings…</string>
-    <string name="calibration_dialog_stop">Calibration complete, suggested values have been updated.</string>
+    <string name="calibration_dialog_done">Calibration complete, suggested values have been updated.</string>
 
     <!-- Inversion -->
     <string name="inversion_title">Inversion</string>

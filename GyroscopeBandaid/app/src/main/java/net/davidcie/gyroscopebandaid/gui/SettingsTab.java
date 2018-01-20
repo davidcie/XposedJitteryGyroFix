@@ -14,6 +14,8 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.common.base.Joiner;
@@ -28,58 +30,58 @@ import java.util.Set;
 
 public class SettingsTab extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
+    AlertDialog mCalibrationDialog;
+    View mCalibrationDialogContent;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.tab_preferences);
         updatePreferenceSummaries();
         setValidators();
+        createCalibrationDialog();
     }
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d("GyroBandaid", "Change in " + key);
-        updatePreferenceSummary(sharedPreferences, key);
-    }
+    private void createCalibrationDialog() {
+        // Needed to make a Snackbar
+        LayoutInflater inflater = getActivity().getLayoutInflater();
 
-    @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-        if (Objects.equals(preference.getKey(), getString(R.string.pref_calibration_values))) {
-            // Needed to make a Snackbar
-            LayoutInflater inflater = getActivity().getLayoutInflater();
+        // Create a dialog to allow editing calibration values
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setMessage(R.string.calibration_dialog_message).setTitle(getString(R.string.calibration_change));
+        mCalibrationDialogContent = inflater.inflate(R.layout.calibration, null);
+        builder.setView(mCalibrationDialogContent);
+        //builder.setView(R.layout.calibration);
+        builder.setPositiveButton(R.string.ok, null);
+        builder.setNegativeButton(R.string.cancel, null);
+        builder.setNeutralButton(R.string.calibration_perform, null);
+        mCalibrationDialog = builder.create();
 
-            // Create a dialog to allow editing calibration values
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setMessage(R.string.calibration_dialog_message).setTitle(getString(R.string.calibration_change));
-            //final View dialogContent = inflater.inflate(R.layout.calibration, null);
-            //builder.setView(dialogContent);
-            builder.setView(R.layout.calibration);
-            builder.setPositiveButton(R.string.ok, null);
-            builder.setNegativeButton(R.string.cancel, null);
-            builder.setNeutralButton(R.string.calibration_perform, null);
-            final AlertDialog dialog = builder.create();
-
-            // Define button actions
-            final View.OnClickListener okAction = new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Log.d("GyroBandaid", "Clicked OK");
-                    dialog.dismiss();
-                }
-            };
-            final View.OnClickListener cancelAction = new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Log.d("GyroBandaid", "Clicked Cancel");
-                    dialog.cancel();
-                }
-            };
-            final View.OnClickListener calibrateAction = new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Log.d("GyroBandaid", "Clicked Calibrate");
-                    //Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
-                    runCalibration();
+        // Define button actions
+        final View.OnClickListener okAction = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("GyroBandaid", "Clicked Ok, persisting values");
+                persistAxis(R.id.edit_calibration_x, R.string.pref_calibration_value_x);
+                persistAxis(R.id.edit_calibration_y, R.string.pref_calibration_value_y);
+                persistAxis(R.id.edit_calibration_z, R.string.pref_calibration_value_z);
+                mCalibrationDialog.dismiss();
+            }
+        };
+        final View.OnClickListener cancelAction = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("GyroBandaid", "Clicked Cancel");
+                mCalibrationDialog.cancel();
+            }
+        };
+        final View.OnClickListener calibrateAction = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("GyroBandaid", "Clicked Calibrate");
+                //Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
+                // wait 3s?
+                new CalibrateTask().execute();
                     /*Snackbar.make(view, "Please place your phone on a flat surface, calibration will start in a few seconds.", Snackbar.LENGTH_LONG)
                             .setAction("Cancel", new View.OnClickListener() {
                                 @Override
@@ -98,19 +100,34 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
                                 }
                             })
                             .show();*/
-                }
-            };
+            }
+        };
 
-            // Assign button actions
-            dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                @Override
-                public void onShow(DialogInterface dialogInterface) {
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(okAction);
-                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(cancelAction);
-                    dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(calibrateAction);
-                }
-            });
-            dialog.show();
+        // Assign button actions
+        mCalibrationDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialogInterface) {
+                mCalibrationDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(okAction);
+                mCalibrationDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(cancelAction);
+                mCalibrationDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(calibrateAction);
+            }
+        });
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d("GyroBandaid", "Change in " + key);
+        updatePreferenceSummary(sharedPreferences, key);
+    }
+
+    @Override
+    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
+        if (Objects.equals(preference.getKey(), getString(R.string.pref_calibration_values))) {
+            // update x,y,z with preferences
+            updateAxisFromPreference(R.id.edit_calibration_x, R.string.pref_calibration_value_x);
+            updateAxisFromPreference(R.id.edit_calibration_y, R.string.pref_calibration_value_y);
+            updateAxisFromPreference(R.id.edit_calibration_z, R.string.pref_calibration_value_z);
+            mCalibrationDialog.show();
         }
         return super.onPreferenceTreeClick(preferenceScreen, preference);
     }
@@ -143,7 +160,11 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
 
     private void updatePreferenceSummary(SharedPreferences sharedPreferences, String key) {
         if (key.equals(getString(R.string.pref_calibration_values))) {
-            // TODO: update calibration summary
+            Float x = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_x), 0.0f);
+            Float y = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_y), 0.0f);
+            Float z = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_z), 0.0f);
+            String summary = getString(R.string.calibration_summary, x, y, z);
+            findPreference(key).setSummary(summary);
         }
 
         else if (key.equals(getString(R.string.pref_inversion_axes))) {
@@ -248,28 +269,55 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         return findPreference(getString(resourceId));
     }
 
-    // pause any corrections by setting a setting?
-    // in a background task gather ~100 gyro readings, updating progress as we go
-    // private class DownloadFilesTask extends AsyncTask<URL, Integer, Long> {
+    private void updateAxisFromPreference(int editTextResId, int preferenceResId) {
+        EditText editText = mCalibrationDialogContent.findViewById(editTextResId);
+        SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+        Float value = sharedPreferences.getFloat(getString(preferenceResId), 0.0f);
+        editText.setText(Float.toString(value));
+    }
+
+    private void updateAxisFromValue(int editTextResId, Float value) {
+        EditText editText = mCalibrationDialogContent.findViewById(editTextResId);
+        editText.setText(Float.toString(value));
+    }
+
+    private void persistAxis(int editTextResId, int preferenceResId) {
+        EditText editText = mCalibrationDialogContent.findViewById(editTextResId);
+        Float value = Float.valueOf(editText.getText().toString());
+        SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+        sharedPreferences.edit().putFloat(getString(preferenceResId), value).apply();
+    }
+
+    // pause any corrections - by setting a setting?
     // show toast, update values
 
+    private class CalibrateTask extends AsyncTask<Void, Integer, Float[]> {
 
-    private class GyroCalibrator extends AsyncTask<Void, Integer, Float[]> {
+        private final int NUM_READINGS = 100;
 
         @Override
         protected void onPreExecute() {
-            // add a progress bar to dialog UI
+            // add a progressBar bar to dialog UI
             // ProgressBar.setVisibility(View.INVISIBLE)
+            ProgressBar progressBar = mCalibrationDialogContent.findViewById(R.id.calibrationProgress);
+            progressBar.setProgress(0);
+            progressBar.setVisibility(View.VISIBLE);
+            Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
         }
 
         @Override
         protected Float[] doInBackground(Void... voids) {
+            // Give user time to stop interacting with phone
+            try { Thread.sleep(3500); }
+            catch (InterruptedException ignored) { }
+
             // disable corrections
             // enable gyroscope
             // gather 100 readings in a loop, updating progress
-            final int numReadings = 100;
+
             Float[] axes = new Float[3];
-            for (int r = 0; r < numReadings; r++) {
+            axes[0] = axes[1] = axes[2] = 0.0f;
+            for (int r = 0; r < NUM_READINGS; r++) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -279,40 +327,28 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
                 axes[1] += 0.1f;
                 axes[2] += 0.1f;
                 if (isCancelled()) break;
-                publishProgress(r);
+                publishProgress((int) ((r / (float) NUM_READINGS) * 100));
             }
-            axes[0] /= numReadings;
-            axes[1] /= numReadings;
-            axes[2] /= numReadings;
+            axes[0] /= NUM_READINGS;
+            axes[1] /= NUM_READINGS;
+            axes[2] /= NUM_READINGS;
             return axes;
         }
 
         protected void onProgressUpdate(Integer... progress) {
-            //setProgressPercent(progress[0]);
+            ProgressBar progressBar = mCalibrationDialogContent.findViewById(R.id.calibrationProgress);
+            progressBar.setProgress(progress[0]);
         }
 
         protected void onPostExecute(Float[] result) {
-            // return the three axes
-            // hide progress bar
+            ProgressBar progressBar = mCalibrationDialogContent.findViewById(R.id.calibrationProgress);
+            progressBar.setVisibility(View.INVISIBLE);
+
+            Toast.makeText(getActivity(), R.string.calibration_dialog_done, Toast.LENGTH_LONG).show();
+            updateAxisFromValue(R.id.edit_calibration_x, result[0]);
+            updateAxisFromValue(R.id.edit_calibration_y, result[1]);
+            updateAxisFromValue(R.id.edit_calibration_z, result[2]);
         }
-    }
-
-    private void runCalibration() {
-        Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(3500); // == Toast.LENGTH_LONG
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                Toast.makeText(getActivity(), R.string.calibration_dialog_progress, Toast.LENGTH_LONG).show();
-
-            }
-        });
-        t.start();
     }
 
     /*private void runCalibration() {
