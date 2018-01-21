@@ -1,7 +1,7 @@
 package net.davidcie.gyroscopebandaid;
 
 public class Util {
-    static String printArray(float[] array) {
+    public static String printArray(float[] array) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < array.length; i++) {
             builder.append(" [");
@@ -50,5 +50,10 @@ public class Util {
         if (value == null) return false;
         Float test = Float.valueOf(value.toString());
         return !(test.isNaN() || test.isInfinite() || test < minValue || test > maxValue);
+    }
+
+    public static Float round(Float number, int decimalPlaces) {
+        String rounded = String.format("%." + decimalPlaces + "f", number);
+        return Float.valueOf(rounded);
     }
 }

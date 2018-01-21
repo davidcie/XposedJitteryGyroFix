@@ -102,8 +102,7 @@ public class GyroscopeFilter {
 
             // Step 5: apply rounding
             if (roundingPrecision > 0 && computedReading > 0.0f) {
-                String rounded = String.format("%." + roundingPrecision + "f", computedReading);
-                computedReading = Float.valueOf(rounded);
+                computedReading = Util.round(computedReading, roundingPrecision);
                 Log.v(TAG, "Applying rounding to " + roundingPrecision + "dp, result is " + computedReading);
             }
 
