@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static android.content.Context.SENSOR_SERVICE;
+import static java.lang.System.currentTimeMillis;
 
 public class SettingsTab extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -301,11 +302,13 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             try { Thread.sleep(3500); }
             catch (InterruptedException ignored) { }
 
-            final ArrayList<SensorEvent> readings = new ArrayList<>(WANT_READINGS);
+            // TODO: disable corrections
+            long startTime = currentTimeMillis();
 
-            // disable corrections
-            // enable gyroscope
+            // Time start
+            final ArrayList<SensorEvent> readings = new ArrayList<>(WANT_READINGS);
             final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
+            // TODO: check if sensor manager is not null
             Sensor gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             SensorEventListener gyroscopeSensorListener = new SensorEventListener() {
                 @Override
@@ -323,7 +326,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             sensorManager.registerListener(gyroscopeSensorListener, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
             // Wait before we gather enough readings OR 10s passes by
-            while (readings.size() < WANT_READINGS) {
+            while (readings.size() < WANT_READINGS && (currentTimeMillis()-startTime) < 10*1000) {
                 try { Thread.sleep(100); }
                 catch (InterruptedException ignored) {}
                 int progress = (int) ((readings.size() / (float) WANT_READINGS) * 100);
@@ -337,14 +340,16 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             // Calculate and return average
             float[] axes = new float[3];
             axes[0] = axes[1] = axes[2] = 0.0f;
-            for (SensorEvent reading : readings) {
-                axes[0] += reading.values[0];
-                axes[1] += reading.values[1];
-                axes[2] += reading.values[2];
+            if (readings.size() > 0) {
+                for (SensorEvent reading : readings) {
+                    axes[0] += reading.values[0];
+                    axes[1] += reading.values[1];
+                    axes[2] += reading.values[2];
+                }
+                axes[0] /= readings.size();
+                axes[1] /= readings.size();
+                axes[2] /= readings.size();
             }
-            axes[0] /= readings.size();
-            axes[1] /= readings.size();
-            axes[2] /= readings.size();
             Log.d("GyroBandaid", "Returning values " + Util.printArray(axes));
             return axes;
         }
