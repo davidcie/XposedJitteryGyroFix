@@ -311,10 +311,6 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             try { Thread.sleep(3500); }
             catch (InterruptedException ignored) { }
 
-            // TODO: disable corrections
-            SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
-            boolean wasEnabled = sharedPreferences.getBoolean(getString(R.string.pref_global_enabled), true);
-            if (wasEnabled) sharedPreferences.edit().putBoolean(getString(R.string.pref_global_enabled), false).commit();
             long startTime = currentTimeMillis();
 
             // Time start
@@ -348,7 +344,6 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             // Done!
             Log.d("GyroBandaid", "Finished calibration with " + readings.size() + " readings, unregistering listener");
             sensorManager.unregisterListener(gyroscopeSensorListener);
-            if (wasEnabled) sharedPreferences.edit().putBoolean(getString(R.string.pref_global_enabled), true).commit();
 
             // Calculate and return average
             float[] axes = new float[3];

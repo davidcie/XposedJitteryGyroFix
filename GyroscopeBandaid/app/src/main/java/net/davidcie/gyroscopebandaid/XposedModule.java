@@ -1,6 +1,7 @@
 package net.davidcie.gyroscopebandaid;
 
 import android.os.Build;
+import android.util.Log;
 
 import net.davidcie.gyroscopebandaid.hooks.SensorEventApi18;
 import net.davidcie.gyroscopebandaid.hooks.SensorEventApi23;
@@ -26,12 +27,18 @@ public class XposedModule implements IXposedHookLoadPackage {
      */
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        XposedBridge.log("GyroBandaid: loading package " + lpparam.packageName);
+        if (lpparam.packageName.equals("net.davidcie.gyroscopebandaid")) {
+            Log.d(EnginePreferences.LOG_TAG, "Skipping package " + lpparam.packageName);
+            return;
+        }
+
+        Log.d(EnginePreferences.LOG_TAG, "Hooking into package " + lpparam.packageName);
 
         // Load preferences using Xposed, SharedPreferences() won't work inside the hook
         sPrefs = new XSharedPreferences(XposedModule.class.getPackage().getName(), "pref_median");
         sPrefs.makeWorldReadable();
 
+        // Hook into sensor readings
         hookGyroInterceptor(lpparam);
         hookCardboardInterceptor(lpparam);
     }
