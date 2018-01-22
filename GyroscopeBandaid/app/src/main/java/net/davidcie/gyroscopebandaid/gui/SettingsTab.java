@@ -234,7 +234,6 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         findPreferenceById(R.string.pref_smoothing_alpha).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                // TODO: show a notification
                 return Util.isValidFloat(newValue, 0.0f, 1.0f);
             }
         });
@@ -243,7 +242,9 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         findPreferenceById(R.string.pref_thresholding_static).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                return Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE);
+                boolean isValid = Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE);
+                if (!isValid) Toast.makeText(getActivity(), R.string.thresholding_validation_error, Toast.LENGTH_LONG).show();
+                return isValid;
             }
         });
 
@@ -251,7 +252,9 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         findPreferenceById(R.string.pref_thresholding_dynamic).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                return Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE);
+                boolean isValid = Util.isValidFloat(newValue, 0.0f, Float.MAX_VALUE);
+                if (!isValid) Toast.makeText(getActivity(), R.string.thresholding_validation_error, Toast.LENGTH_LONG).show();
+                return isValid;
             }
         });
     }
@@ -291,7 +294,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
 
     private class CalibrateTask extends AsyncTask<Void, Integer, float[]> {
 
-        private final int WANT_READINGS = 100;
+        private final int WANT_SECONDS = 10;
 
         @Override
         protected void onPreExecute() {
@@ -301,6 +304,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             Toast.makeText(getActivity(), R.string.calibration_dialog_prepare, Toast.LENGTH_LONG).show();
         }
 
+        @SuppressLint("ApplySharedPref")
         @Override
         protected float[] doInBackground(Void... voids) {
             // Give user time to stop interacting with phone
@@ -308,10 +312,13 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             catch (InterruptedException ignored) { }
 
             // TODO: disable corrections
+            SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+            boolean wasEnabled = sharedPreferences.getBoolean(getString(R.string.pref_global_enabled), true);
+            if (wasEnabled) sharedPreferences.edit().putBoolean(getString(R.string.pref_global_enabled), false).commit();
             long startTime = currentTimeMillis();
 
             // Time start
-            final ArrayList<SensorEvent> readings = new ArrayList<>(WANT_READINGS);
+            final ArrayList<SensorEvent> readings = new ArrayList<>(100); // Assume about a 100 readings
             final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
             // TODO: check if sensor manager is not null
             Sensor gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -331,16 +338,17 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
             sensorManager.registerListener(gyroscopeSensorListener, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
             // Wait before we gather enough readings OR 10s passes by
-            while (readings.size() < WANT_READINGS && (currentTimeMillis()-startTime) < 10*1000) {
+            while ((currentTimeMillis()-startTime) < WANT_SECONDS*1000) {
                 try { Thread.sleep(100); }
                 catch (InterruptedException ignored) {}
-                int progress = (int) ((readings.size() / (float) WANT_READINGS) * 100);
+                int progress = (int) ((currentTimeMillis()-startTime) / ((float) WANT_SECONDS*1000) * 100);
                 publishProgress(Math.min(progress, 100));
             }
 
             // Done!
-            Log.d("GyroBandaid", "Got enough readings, unregistering listener");
+            Log.d("GyroBandaid", "Finished calibration with " + readings.size() + " readings, unregistering listener");
             sensorManager.unregisterListener(gyroscopeSensorListener);
+            if (wasEnabled) sharedPreferences.edit().putBoolean(getString(R.string.pref_global_enabled), true).commit();
 
             // Calculate and return average
             float[] axes = new float[3];
@@ -355,7 +363,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
                 axes[1] /= readings.size();
                 axes[2] /= readings.size();
             }
-            Log.d("GyroBandaid", "Returning values " + Util.printArray(axes));
+            Log.d("GyroBandaid", "Calibration returning " + Util.printArray(axes));
             return axes;
         }
 

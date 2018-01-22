@@ -62,6 +62,7 @@
     <string name="thresholding_title">Thresholding</string>
     <string name="thresholding_enabled">Interpreting smaller sensor readings as noise and outputting zero instead.</string>
     <string name="thresholding_disabled">Taking into account even smaller sensor readings.</string>
+    <string name="thresholding_validation_error">This setting can only take values from 0.0 to infinity.</string>
     <string name="thresholding_static">Static</string>
     <string name="thresholding_static_summary">Require a more dynamic motion for your device to &lt;b>start&lt;/b> reporting movement. &lt;i>Current value: %s.&lt;/i></string>
     <string name="thresholding_dynamic">Dynamic</string>
