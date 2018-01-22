@@ -21,7 +21,7 @@ public class Util {
      * see <a href="http://blog.thomnichols.org/2011/08/smoothing-sensor-data-with-a-low-pass-filter">his article</a>
      * and <a href="http://stackoverflow.com/a/5780505/1121352">StackOverflow answer</a>.
      */
-    static float lowPass(float alpha, float current, float prev) {
+    public static float lowPass(float alpha, float current, float prev) {
 
         return prev + alpha * (current - prev);
     }

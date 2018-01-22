@@ -2,7 +2,7 @@ package net.davidcie.gyroscopebandaid.hooks;
 
 import android.hardware.Sensor;
 
-import net.davidcie.gyroscopebandaid.GyroscopeFilter;
+import net.davidcie.gyroscopebandaid.Engine;
 
 import java.util.HashMap;
 
@@ -11,7 +11,11 @@ import de.robv.android.xposed.XposedHelpers;
 
 public class SensorEventApi24 extends XC_MethodHook {
 
-    private GyroscopeFilter mFilter = new GyroscopeFilter(3, 10, false);
+    private Engine mEngine;
+
+    public SensorEventApi24(Engine engine) {
+        mEngine = engine;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -23,7 +27,7 @@ public class SensorEventApi24 extends XC_MethodHook {
 
         if (sensor.getType() == Sensor.TYPE_GYROSCOPE ||
             sensor.getType() == Sensor.TYPE_GYROSCOPE_UNCALIBRATED) {
-            mFilter.newReading((float[]) param.args[1]);
+            mEngine.newReading((float[]) param.args[1]);
         }
     }
 }

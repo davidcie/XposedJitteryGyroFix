@@ -39,9 +39,11 @@ public class XposedModule implements IXposedHookLoadPackage {
     private void hookGyroInterceptor(final XC_LoadPackage.LoadPackageParam lpparam) {
         // Since API 18 SensorEventQueue dispatches events via the same method but details change.
         XC_MethodHook dispatchHook;
-        if (Build.VERSION.SDK_INT >= 24) dispatchHook = new SensorEventApi24();
-        else if (Build.VERSION.SDK_INT == 23) dispatchHook = new SensorEventApi23();
-        else dispatchHook = new SensorEventApi18();
+        Engine engine = new Engine(false);
+
+        if (Build.VERSION.SDK_INT >= 24) dispatchHook = new SensorEventApi24(engine);
+        else if (Build.VERSION.SDK_INT == 23) dispatchHook = new SensorEventApi23(engine);
+        else dispatchHook = new SensorEventApi18(engine);
 
         // dispatchSensorEvent(int handle, float[] values, int inAccuracy, long timestamp)
         XposedHelpers.findAndHookMethod(
