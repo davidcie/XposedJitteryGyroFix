@@ -49,10 +49,10 @@
         <item>Additive smoothing (experimental)</item>
     </string-array>
     <string-array name="smoothing_algorithm_values">
-        <item>median</item>
-        <item>mean</item>
-        <item>lowpass</item>
-        <item>addsmooth</item>
+        <item>@string/pref_smoothing_algorithm_median</item>
+        <item>@string/pref_smoothing_algorithm_mean</item>
+        <item>@string/pref_smoothing_algorithm_lowpass</item>
+        <item>@string/pref_smoothing_algorithm_addsmooth</item>
     </string-array>
     <string name="smoothing_sample">Number of samples</string>
     <string name="smoothing_alpha">Smoothing strength</string>

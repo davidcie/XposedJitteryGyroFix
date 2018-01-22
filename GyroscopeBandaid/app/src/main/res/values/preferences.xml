@@ -17,6 +17,10 @@
 
     <string name="pref_smoothing_enabled">smoothing_enabled</string>
     <string name="pref_smoothing_algorithm">smoothing_algorithm</string>
+    <string name="pref_smoothing_algorithm_median">median</string>
+    <string name="pref_smoothing_algorithm_mean">mean</string>
+    <string name="pref_smoothing_algorithm_lowpass">lowpass</string>
+    <string name="pref_smoothing_algorithm_addsmooth">addsmooth</string>
     <string name="pref_smoothing_sample">smoothing_sample</string>
     <string name="pref_smoothing_alpha">smoothing_alpha</string>
 

@@ -189,6 +189,11 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
                     R.array.smoothing_algorithm_values,
                     value);
             findPreference(key).setSummary(entry);
+            // Enable or disable changing alpha
+            findPreferenceById(R.string.pref_smoothing_alpha).setEnabled(
+                    Objects.equals(value, getString(R.string.pref_smoothing_algorithm_addsmooth)) ||
+                    Objects.equals(value, getString(R.string.pref_smoothing_algorithm_lowpass))
+            );
         }
 
         else if (key.equals(getString(R.string.pref_smoothing_sample))) {
