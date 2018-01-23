@@ -19,6 +19,7 @@ android {
         targetSdkVersion 27
         // App version as integer
         versionCode 3
+        versionName "0.5"
     }
 
     buildTypes {
