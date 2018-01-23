@@ -45,11 +45,9 @@
             android:entryValues="@array/smoothing_algorithm_values"
             android:key="@string/pref_smoothing_algorithm"
             android:title="@string/smoothing_algorithm" />
-        <net.davidcie.gyroscopebandaid.extensions.EditIntegerPreference
+        <com.mapzen.prefsplus.EditIntPreference
             android:defaultValue="@integer/default_smoothing_sample"
             android:key="@string/pref_smoothing_sample"
-            android:maxLength="4"
-            android:numeric="integer"
             android:title="@string/smoothing_sample" />
         <net.jayschwa.android.preference.SliderPreference
             android:key="@string/pref_smoothing_alpha"
@@ -65,18 +63,14 @@
             android:summaryOn="@string/thresholding_enabled"
             android:summaryOff="@string/thresholding_disabled"
             android:title="@string/enabled" />
-        <net.davidcie.gyroscopebandaid.extensions.EditFloatPreference
+        <com.mapzen.prefsplus.EditFloatPreference
             android:defaultValue="@string/default_threshold_static"
             android:key="@string/pref_thresholding_static"
-            android:maxLength="15"
-            android:numeric="signed"
             android:summary="@string/thresholding_static_summary"
             android:title="@string/thresholding_static" />
-        <net.davidcie.gyroscopebandaid.extensions.EditFloatPreference
+        <com.mapzen.prefsplus.EditFloatPreference
             android:defaultValue="@string/default_threshold_dynamic"
             android:key="@string/pref_thresholding_dynamic"
-            android:maxLength="15"
-            android:numeric="signed"
             android:summary="@string/thresholding_dynamic_summary"
             android:title="@string/thresholding_dynamic" />
     </PreferenceCategory>
@@ -88,11 +82,9 @@
             android:summaryOn="@string/rounding_enabled"
             android:summaryOff="@string/rounding_disabled"
             android:title="@string/enabled" />
-        <net.davidcie.gyroscopebandaid.extensions.EditIntegerPreference
+        <com.mapzen.prefsplus.EditIntPreference
             android:defaultValue="@integer/default_rounding_decimalplaces"
             android:key="@string/pref_rounding_decimalplaces"
-            android:maxLength="15"
-            android:numeric="integer"
             android:title="@string/rounding_decimalplaces" />
     </PreferenceCategory>
 
