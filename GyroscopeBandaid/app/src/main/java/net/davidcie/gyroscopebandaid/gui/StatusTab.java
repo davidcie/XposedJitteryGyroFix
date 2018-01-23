@@ -1,56 +1,118 @@
 package net.davidcie.gyroscopebandaid.gui;
 
 import android.app.Fragment;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import net.davidcie.gyroscopebandaid.Engine;
 import net.davidcie.gyroscopebandaid.EnginePreferences;
 import net.davidcie.gyroscopebandaid.R;
-
-import static android.content.Context.SENSOR_SERVICE;
+import net.davidcie.gyroscopebandaid.services.GyroService;
 
 public class StatusTab extends Fragment {
 
-    private Engine mEngine;
-    private SensorManager mSensorManager;
-    private Sensor mGyroscope;
-    private SensorEventListener mGyroListener;
+    // Endpoint for services to send messages to StatusTab
+    final Messenger mClientMessenger = new Messenger(new IncomingHandler());
+
+    // Messanger for sending messages to gyroscope service over a connection
+    Messenger mServiceMessenger = null;
+    boolean mServiceBound = false;
+
+    /**
+     * Class for interacting with the main interface of the service.
+     */
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mServiceMessenger = new Messenger(service);
+            mServiceBound = true;
+
+            try {
+                Message message = Message.obtain(null, GyroService.REGISTER_CLIENT);
+                message.replyTo = mClientMessenger;
+                mServiceMessenger.send(message);
+            } catch (RemoteException e) {
+                // Service crashed before we managed to connect?
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mServiceMessenger = null;
+            mServiceBound = false;
+        }
+    };
 
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-
-        if (isVisibleToUser) mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        else mSensorManager.unregisterListener(mGyroListener);
+        if (mServiceBound) {
+            Message message = Message.obtain(null, isVisibleToUser ? GyroService.PLAY : GyroService.PAUSE);
+            try {
+                mServiceMessenger.send(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mEngine = new Engine(false);
-        mSensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
-        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        mGyroListener = new SensorEventListener() {
-            @Override
-            public void onSensorChanged(SensorEvent sensorEvent) {
-                Log.d(EnginePreferences.LOG_TAG, "Received SensorEvent on Status tab");
-                mEngine.newReading(sensorEvent.values);
-                // update UI
-            }
-
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int i) {
-            }
-        };
-
         return inflater.inflate(R.layout.tab_status, container, false);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.d(EnginePreferences.LOG_TAG, "StatusTab: Trying to bind to service");
+        Intent wantService = new Intent(getActivity(), GyroService.class);
+        getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.d(EnginePreferences.LOG_TAG, "StatusTab: Unbinding from service");
+        if (mServiceBound) {
+            if (mServiceMessenger != null) {
+                Message message = Message.obtain(null, GyroService.UNREGISTER_CLIENT);
+                message.replyTo = mClientMessenger;
+                try {
+                    mServiceMessenger.send(message);
+                } catch (RemoteException e) {
+                    // Nothing we need to do, service crashed on its own.
+                }
+            }
+            getActivity().unbindService(mServiceConnection);
+            mServiceBound = false;
+        }
+    }
+
+    /**
+     * Handler for incoming messages from the service.
+     */
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case GyroService.NEW_READING:
+                    Log.d(EnginePreferences.LOG_TAG, "StatusTab: Received NEW_READING");
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
     }
 }

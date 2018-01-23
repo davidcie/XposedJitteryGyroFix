@@ -6,7 +6,7 @@ import java.util.Set;
 @SuppressWarnings("WeakerAccess")
 public class EnginePreferences {
 
-    public static final String LOG_TAG = "GyroFilter";
+    public static final String LOG_TAG = "GyroBandaid";
     public static final int AXES = 3;
 
     public boolean enabled;
