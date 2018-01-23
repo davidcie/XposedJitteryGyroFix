@@ -38,7 +38,7 @@ public class Engine {
     }
 
     public void newReading(float[] reading) {
-        Log.d(EnginePreferences.LOG_TAG, "New reading " + Util.printArray(reading));
+        Log.d(EnginePreferences.LOG_TAG, "Engine: New reading " + Util.printArray(reading));
 
         // TODO: replace with a listener that changes without polling
         // Refresh preferences in case the user changed a setting
@@ -51,14 +51,12 @@ public class Engine {
 
         // Process the new gyroscope reading using all plugins
         if (mPreferences.enabled) {
-            Log.d(EnginePreferences.LOG_TAG, "Starting with " + Util.printArray(reading));
             for (IEnginePlugin plugin : mPlugins) {
-                Log.v(EnginePreferences.LOG_TAG, "Calling " + plugin.getClass().getName());
+                Log.v(EnginePreferences.LOG_TAG, "Engine: Running " + plugin.getClass().getName());
                 plugin.processReading(mPreferences, mHistory, reading);
+                Log.v(EnginePreferences.LOG_TAG, "Engine: Current value " + Util.printArray(reading));
             }
-            Log.d(EnginePreferences.LOG_TAG, "Returning " + Util.printArray(reading));
-        } else {
-            Log.d(EnginePreferences.LOG_TAG, "Engine disabled, skipping");
+            Log.d(EnginePreferences.LOG_TAG, "Engine: Returning " + Util.printArray(reading));
         }
     }
 }

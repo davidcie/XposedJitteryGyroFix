@@ -4,31 +4,44 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingStart="?dialogPreferredPadding"
-    android:paddingEnd="?dialogPreferredPadding">
+    android:paddingEnd="?dialogPreferredPadding"
+    android:paddingTop="8dp">
 
-    <EditText
-        android:id="@+id/edit_calibration_x"
+    <android.support.design.widget.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="X-axis"
-        android:inputType="numberSigned" />
+        android:layout_height="wrap_content">
+        <EditText
+            android:id="@+id/edit_calibration_x"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/x_axis"
+            android:inputType="numberSigned" />
+    </android.support.design.widget.TextInputLayout>
 
-    <EditText
-        android:id="@+id/edit_calibration_y"
+    <android.support.design.widget.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="Y-axis"
-        android:inputType="numberSigned" />
+        android:layout_height="wrap_content">
+        <EditText
+            android:id="@+id/edit_calibration_y"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/y_axis"
+            android:inputType="numberSigned" />
+    </android.support.design.widget.TextInputLayout>
 
-    <EditText
-        android:id="@+id/edit_calibration_z"
+    <android.support.design.widget.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="Z-axis"
-        android:inputType="numberSigned" />
+        android:layout_height="wrap_content">
+        <EditText
+            android:id="@+id/edit_calibration_z"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/z_axis"
+            android:inputType="numberSigned" />
+    </android.support.design.widget.TextInputLayout>
 
     <ProgressBar
         android:id="@+id/calibrationProgress"

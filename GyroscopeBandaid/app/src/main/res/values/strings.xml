@@ -8,6 +8,11 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="settings_intro">All values in radians per second. A value of 1.0 means a rotation of almost 60° per second.</string>
+    <string name="xposed_inactive">You do not seem to have Xposed Framework installed. You may check your gyroscope readings, change settings and preview their effect but they won\'t be applied until you install Xposed, enable this module and reboot.</string>
+    <string name="module_inactive">Gyroscope Bandaid has not been activated by Xposed. You may check your gyroscope readings, change settings and preview their effect but they won\'t be applied until you enable this module and reboot.</string>
+    <string name="x_axis">X axis</string>
+    <string name="y_axis">Y axis</string>
+    <string name="z_axis">Z axis</string>
 
     <!-- Calibration -->
     <string name="calibration_title">Calibration</string>
@@ -27,9 +32,9 @@
     <string name="inversion_change">Select which axes to invert</string>
     <string name="inversion_summary_none">None</string>
     <string-array name="inversion_axes_entries">
-        <item>X axis</item>
-        <item>Y axis</item>
-        <item>Z axis</item>
+        <item>@string/x_axis</item>
+        <item>@string/y_axis</item>
+        <item>@string/z_axis</item>
     </string-array>
     <string-array name="inversion_axes_values">
         <item>x</item>

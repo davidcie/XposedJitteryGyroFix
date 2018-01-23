@@ -42,7 +42,7 @@ public class XposedModule implements IXposedHookLoadPackage {
         Log.d(EnginePreferences.LOG_TAG, "Hooking into package " + lpparam.packageName);
 
         // Load preferences using Xposed, SharedPreferences() won't work inside the hook
-        sPrefs = new XSharedPreferences(XposedModule.class.getPackage().getName(), "pref_median");
+        sPrefs = new XSharedPreferences(XposedModule.class.getPackage().getName(), "main_prefs");
         sPrefs.makeWorldReadable();
 
         // Hook into sensor readings
