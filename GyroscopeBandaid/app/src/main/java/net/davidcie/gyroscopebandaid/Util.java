@@ -1,6 +1,13 @@
 package net.davidcie.gyroscopebandaid;
 
+import android.content.pm.PackageManager;
+
 public class Util {
+
+    public static boolean isModuleActivated() {
+        return false;
+    }
+
     public static String printArray(float[] array) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < array.length; i++) {
@@ -55,5 +62,18 @@ public class Util {
     public static Float round(Float number, int decimalPlaces) {
         String rounded = String.format("%." + decimalPlaces + "f", number);
         return Float.valueOf(rounded);
+    }
+
+    public static boolean isPackageInstalled(String packageName, PackageManager packageManager){
+        try {
+            packageManager.getPackageInfo(packageName, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static boolean isXposedInstalled(PackageManager packageManager) {
+        return isPackageInstalled("de.robv.android.xposed.installer", packageManager);
     }
 }

@@ -22,9 +22,12 @@ public class Engine {
     private float[][] mHistory;
     private List<IEnginePlugin> mPlugins = new ArrayList<>();
     private EnginePreferences mPreferences;
+    private boolean mXposedAvailable;
 
-    public Engine(boolean absoluteMode) {
+    public Engine(boolean absoluteMode, boolean xposedAvailable) {
+        Log.d(EnginePreferences.LOG_TAG, "Engine.ctor xposedAvailable=" + xposedAvailable + ", isModuleActivated=" + Util.isModuleActivated());
         mPreferences = new EnginePreferences(absoluteMode);
+        mXposedAvailable = xposedAvailable && Util.isModuleActivated();
 
         mPlugins.add(new InvertingPlugin());
         mPlugins.add(new CalibratingPlugin());
@@ -39,7 +42,7 @@ public class Engine {
 
         // TODO: replace with a listener that changes without polling
         // Refresh preferences in case the user changed a setting
-        XposedModule.sPrefs.reload();
+        if (mXposedAvailable) XposedModule.sPrefs.reload();
         mPreferences.reload();
 
         // If user changed sample size, change the size of history;

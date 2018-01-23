@@ -19,6 +19,8 @@ import android.util.Log;
 import net.davidcie.gyroscopebandaid.Engine;
 import net.davidcie.gyroscopebandaid.EnginePreferences;
 
+import static net.davidcie.gyroscopebandaid.Util.isXposedInstalled;
+
 public class GyroService extends Service {
 
     // Available commands
@@ -47,13 +49,13 @@ public class GyroService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        mEngine = new Engine(false);
+        mEngine = new Engine(false, isXposedInstalled(getPackageManager()));
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mGyroListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
-                Log.d(EnginePreferences.LOG_TAG, "Received SensorEvent on Status tab");
+                Log.d(EnginePreferences.LOG_TAG, "GyroService: Received SensorEvent");
                 float[] originalValues = new float[3];
                 System.arraycopy(sensorEvent.values, 0, originalValues, 0, 3);
                 mEngine.newReading(sensorEvent.values);
@@ -80,11 +82,20 @@ public class GyroService extends Service {
     }
 
     public void play() {
-        if (!mSensorActive) mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        Log.d(EnginePreferences.LOG_TAG, "GyroService: play(), mSensorActive=" + mSensorActive +
+                                         ", mGyroscope" + (mGyroscope == null ? "=null" : "!=null"));
+        if (!mSensorActive && mGyroscope != null) {
+            Log.d(EnginePreferences.LOG_TAG, "GyroService: Enabling sensor");
+            mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 
     public void pause() {
-        if (mSensorActive) mSensorManager.unregisterListener(mGyroListener);
+        Log.d(EnginePreferences.LOG_TAG, "GyroService: pause(), mSensorActive=" + mSensorActive);
+        if (mSensorActive) {
+            Log.d(EnginePreferences.LOG_TAG, "GyroService: Disabling sensor");
+            mSensorManager.unregisterListener(mGyroListener);
+        }
     }
 
     /**

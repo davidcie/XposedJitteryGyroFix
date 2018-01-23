@@ -17,6 +17,8 @@ android {
         // App should behave in line with expecations
         // set in Android SDK 27.
         targetSdkVersion 27
+        // App version as integer
+        versionCode 3
     }
 
     buildTypes {
