@@ -1,7 +1,11 @@
 package net.davidcie.gyroscopebandaid;
 
+import android.app.AndroidAppHelper;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
+
+import com.crossbowffs.remotepreferences.RemotePreferences;
 
 import net.davidcie.gyroscopebandaid.hooks.SensorEventApi18;
 import net.davidcie.gyroscopebandaid.hooks.SensorEventApi23;
@@ -28,18 +32,18 @@ public class XposedModule implements IXposedHookLoadPackage {
      */
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        if (lpparam.packageName.equals("net.davidcie.gyroscopebandaid")) {
+        if (lpparam.packageName.equals(XposedModule.class.getPackage().getName())) {
             // A way to know that the module has been activated and loaded by Xposed
             XposedHelpers.findAndHookMethod(
-                    "net.davidcie.gyroscopebandaid",
+                    XposedModule.class.getPackage().getName(),
                     lpparam.classLoader,
                     "isModuleActivated",
                     XC_MethodReplacement.returnConstant(true));
-            Log.d(EnginePreferences.LOG_TAG, "Skipping package " + lpparam.packageName);
+            Log.d(Util.LOG_TAG, "Skipping package " + lpparam.packageName);
             return;
         }
 
-        Log.d(EnginePreferences.LOG_TAG, "Hooking into package " + lpparam.packageName);
+        Log.d(Util.LOG_TAG, "Hooking into package " + lpparam.packageName);
 
         // Load preferences using Xposed, SharedPreferences() won't work inside the hook
         sPrefs = new XSharedPreferences(XposedModule.class.getPackage().getName(), "main_prefs");
@@ -53,13 +57,18 @@ public class XposedModule implements IXposedHookLoadPackage {
     private void hookGyroInterceptor(final XC_LoadPackage.LoadPackageParam lpparam) {
         // Since API 18 SensorEventQueue dispatches events via the same method but details change.
         XC_MethodHook dispatchHook;
-        Engine engine = new Engine(false, true);
+        SharedPreferences preferences = new RemotePreferences(
+                AndroidAppHelper.currentApplication().getApplicationContext(),
+                XposedModule.class.getPackage().getName(),
+                "preferences",
+                true); // Strict mode to detect errors
+        Engine engine = new Engine(false, preferences);
 
         if (Build.VERSION.SDK_INT >= 24) dispatchHook = new SensorEventApi24(engine);
         else if (Build.VERSION.SDK_INT == 23) dispatchHook = new SensorEventApi23(engine);
         else dispatchHook = new SensorEventApi18(engine);
 
-        // dispatchSensorEvent(int handle, float[] values, int inAccuracy, long timestamp)
+        // Signature: dispatchSensorEvent(int handle, float[] values, int inAccuracy, long timestamp)
         XposedHelpers.findAndHookMethod(
                 "android.hardware.SystemSensorManager$SensorEventQueue",
                 lpparam.classLoader, "dispatchSensorEvent", int.class, float[].class, int.class, long.class,
@@ -80,14 +89,15 @@ public class XposedModule implements IXposedHookLoadPackage {
 
             final Class headTransform = headTransformTMP;
 
-            // getHeadView (float[] headView, int offset)
+            // Signature: getHeadView (float[] headView, int offset)
             XposedHelpers.findAndHookMethod(
                     headTransform.getName(),
                     lpparam.classLoader, "getHeadView", float[].class, int.class,
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                            XposedBridge.log("GyroBandaid: getHeadView called");
+                            Log.d(Util.LOG_TAG, "getHeadView called");
+                            //XposedBridge.log("GyroBandaid: getHeadView called");
                         }
                     }
             );

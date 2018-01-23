@@ -1,5 +1,6 @@
 package net.davidcie.gyroscopebandaid;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import net.davidcie.gyroscopebandaid.plugins.CalibratingPlugin;
@@ -21,42 +22,40 @@ public class Engine {
 
     private float[][] mHistory;
     private List<IEnginePlugin> mPlugins = new ArrayList<>();
-    private EnginePreferences mPreferences;
-    private boolean mXposedAvailable;
+    private SharedPreferences mPreferences;
 
-    public Engine(boolean absoluteMode, boolean xposedAvailable) {
-        Log.d(EnginePreferences.LOG_TAG, "Engine.ctor xposedAvailable=" + xposedAvailable + ", isModuleActivated=" + Util.isModuleActivated());
-        mPreferences = new EnginePreferences(absoluteMode);
-        mXposedAvailable = xposedAvailable && Util.isModuleActivated();
+    public Engine(boolean absoluteMode, SharedPreferences preferences) {
+        mPreferences = preferences;
 
         mPlugins.add(new InvertingPlugin());
         mPlugins.add(new CalibratingPlugin());
         mPlugins.add(new HistoryUpdaterPlugin());
         mPlugins.add(new SmoothingPlugin());
-        mPlugins.add(new ThresholdingPlugin());
+        mPlugins.add(new ThresholdingPlugin(absoluteMode));
         mPlugins.add(new RoundingPlugin());
     }
 
     public void newReading(float[] reading) {
-        Log.d(EnginePreferences.LOG_TAG, "Engine: New reading " + Util.printArray(reading));
+        Log.d(Util.LOG_TAG, "Engine: New reading " + Util.printArray(reading));
 
         // TODO: replace with a listener that changes without polling
         // Refresh preferences in case the user changed a setting
-        if (mXposedAvailable) XposedModule.sPrefs.reload();
-        mPreferences.reload();
+        //mEnginePreferences.reload();
 
         // If user changed sample size, change the size of history;
         // has to be done here because plugins have no way of returning reference
-        mHistory = Util.resizeSecondDimension(mHistory, mPreferences.smoothing_sample);
+        int sampleSize = mPreferences.getInt(Const.PREF_SMOOTHING_SAMPLE, Const.DEFAULT_SMOOTHING_SAMPLE);
+        mHistory = Util.resizeSecondDimension(mHistory, sampleSize);
 
-        // Process the new gyroscope reading using all plugins
-        if (mPreferences.enabled) {
+        // Process new gyroscope reading using all plugins
+        // They will individually check if they are enabled or not
+        if (mPreferences.getBoolean(Const.PREF_GLOBAL_ENABLED, false)) {
             for (IEnginePlugin plugin : mPlugins) {
-                Log.v(EnginePreferences.LOG_TAG, "Engine: Running " + plugin.getClass().getName());
+                Log.v(Util.LOG_TAG, "Engine: Running " + plugin.getClass().getName());
                 plugin.processReading(mPreferences, mHistory, reading);
-                Log.v(EnginePreferences.LOG_TAG, "Engine: Current value " + Util.printArray(reading));
+                Log.v(Util.LOG_TAG, "Engine: Current value " + Util.printArray(reading));
             }
-            Log.d(EnginePreferences.LOG_TAG, "Engine: Returning " + Util.printArray(reading));
+            Log.d(Util.LOG_TAG, "Engine: Returning " + Util.printArray(reading));
         }
     }
 }

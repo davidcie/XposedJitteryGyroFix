@@ -1,6 +1,25 @@
+import net.davidcie.gyroscopebandaid.ConstGenerator
 apply plugin: 'com.android.application'
 
+def generatedSrcDir = new File(buildDir, "generated/tld/src/main/java/")
+def prefsXmlFile = new File(projectDir, "src/main/res/values/prefs.xml")
+
+task generateConst << {
+    ConstGenerator.generateConstClass(generatedSrcDir, prefsXmlFile)
+}
+
+preBuild.dependsOn generateConst
+
 android {
+    // Add the generated class to build sources
+    sourceSets {
+        main {
+            java {
+                srcDirs += generatedSrcDir
+            }
+        }
+    }
+
     // Compile with the latest SDK to allow new compilation checks
     // and get early warning of newly deprecated APIs.
     compileSdkVersion 27
@@ -49,5 +68,7 @@ dependencies {
     //compile 'com.android.support:preference-v14:27.0.2'
     // Some useful utility functions
     compile group: 'com.google.guava', name: 'guava', version: '23.5-android'
+    // Remote preference access
+    compile 'com.crossbowffs.remotepreferences:remotepreferences:0.5'
 }
 

@@ -4,6 +4,9 @@ import android.content.pm.PackageManager;
 
 public class Util {
 
+    public static final String LOG_TAG = "GyroBandaid";
+    public static final int AXES = 3;
+
     public static boolean isModuleActivated() {
         return false;
     }

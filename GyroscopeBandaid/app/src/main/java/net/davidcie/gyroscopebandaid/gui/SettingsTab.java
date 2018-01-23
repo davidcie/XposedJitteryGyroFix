@@ -43,7 +43,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.tab_preferences);
+        addPreferencesFromResource(R.xml.preferences);
         updatePreferenceSummaries();
         setValidators();
         createCalibrationDialog();
@@ -79,7 +79,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
                 // Update summary
                 updatePreferenceSummary(
                         getPreferenceManager().getSharedPreferences(),
-                        getString(R.string.pref_calibration_values));
+                        getString(R.string.pref_calibration_value_x));
                 // Close dialog
                 mCalibrationDialog.dismiss();
             }
@@ -120,11 +120,11 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     @Override
     public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
         // We're only interested in user clicks on the 'Change calibration values' menu entry
-        if (Objects.equals(preference.getKey(), getString(R.string.pref_calibration_values))) {
+        if (Objects.equals(preference.getKey(), getString(R.string.pref_calibration_value_x))) {
             // Update dialog's EditText fields for x,y,z axes with currently stored calibration values
-            updateAxisFromPreference(R.id.edit_calibration_x, R.string.pref_calibration_value_x);
-            updateAxisFromPreference(R.id.edit_calibration_y, R.string.pref_calibration_value_y);
-            updateAxisFromPreference(R.id.edit_calibration_z, R.string.pref_calibration_value_z);
+            updateAxisFromPreference(R.id.edit_calibration_x, R.string.pref_calibration_value_x, R.string.default_calibration_x);
+            updateAxisFromPreference(R.id.edit_calibration_y, R.string.pref_calibration_value_y, R.string.default_calibration_y);
+            updateAxisFromPreference(R.id.edit_calibration_z, R.string.pref_calibration_value_z, R.string.default_calibration_z);
             mCalibrationDialog.show();
         }
         return super.onPreferenceTreeClick(preferenceScreen, preference);
@@ -145,7 +145,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     private void updatePreferenceSummaries() {
         SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
         ArrayList<String> keysToUpdate = new ArrayList<>();
-        keysToUpdate.add(getString(R.string.pref_calibration_values));
+        keysToUpdate.add(getString(R.string.pref_calibration_value_x));
         keysToUpdate.add(getString(R.string.pref_inversion_axes));
         keysToUpdate.add(getString(R.string.pref_smoothing_algorithm));
         keysToUpdate.add(getString(R.string.pref_smoothing_sample));
@@ -157,10 +157,19 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
     }
 
     private void updatePreferenceSummary(SharedPreferences sharedPreferences, String key) {
-        if (key.equals(getString(R.string.pref_calibration_values))) {
-            Float x = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_x), 0.0f);
-            Float y = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_y), 0.0f);
-            Float z = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_z), 0.0f);
+        if (key.equals(getString(R.string.pref_calibration_value_x)) ||
+            key.equals(getString(R.string.pref_calibration_value_y)) ||
+            key.equals(getString(R.string.pref_calibration_value_z))) {
+            TypedValue defaultValue = new TypedValue();
+
+            getResources().getValue(R.string.default_calibration_x, defaultValue, true);
+            Float x = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_x), defaultValue.getFloat());
+
+            getResources().getValue(R.string.default_calibration_y, defaultValue, true);
+            Float y = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_y), defaultValue.getFloat());
+
+            getResources().getValue(R.string.default_calibration_z, defaultValue, true);
+            Float z = sharedPreferences.getFloat(getString(R.string.pref_calibration_value_z), defaultValue.getFloat());
             String summary = getString(R.string.calibration_summary, x, y, z);
             findPreference(key).setSummary(summary);
         }
@@ -182,7 +191,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         }
 
         else if (key.equals(getString(R.string.pref_smoothing_algorithm))) {
-            String defaultValue = getString(R.string.pref_smoothing_algorithm_default);
+            String defaultValue = getString(R.string.default_smoothing_algorithm);
             String value = sharedPreferences.getString(key, defaultValue);
             String entry = getEntryFromValue(
                     R.array.smoothing_algorithm_entries,
@@ -197,14 +206,14 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         }
 
         else if (key.equals(getString(R.string.pref_smoothing_sample))) {
-            int defaultValue = getResources().getInteger(R.integer.pref_smoothing_sample_default);
+            int defaultValue = getResources().getInteger(R.integer.default_smoothing_sample);
             int value = sharedPreferences.getInt(key, defaultValue);
             findPreference(key).setSummary(Integer.toString(value));
         }
 
         else if (key.equals(getString(R.string.pref_smoothing_alpha))) {
             TypedValue defaultValue = new TypedValue();
-            getResources().getValue(R.string.pref_smoothing_alpha_default, defaultValue, true);
+            getResources().getValue(R.string.default_smoothing_alpha, defaultValue, true);
             Float value = sharedPreferences.getFloat(key, defaultValue.getFloat()) * 100;
             @SuppressLint("DefaultLocale")
             String summary = String.format("%.0f%%", value);
@@ -212,19 +221,24 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         }
 
         else if (key.equals(getString(R.string.pref_thresholding_static))) {
-            Float value = sharedPreferences.getFloat(key, 0.0f);
+            TypedValue defaultValue = new TypedValue();
+            getResources().getValue(R.string.default_threshold_static, defaultValue, true);
+            Float value = sharedPreferences.getFloat(key, defaultValue.getFloat());
             String summary = getString(R.string.thresholding_static_summary, Float.toString(value));
             findPreference(key).setSummary(Html.fromHtml(summary));
         }
 
         else if (key.equals(getString(R.string.pref_thresholding_dynamic))) {
-            Float value = sharedPreferences.getFloat(key, 0.0f);
+            TypedValue defaultValue = new TypedValue();
+            getResources().getValue(R.string.default_threshold_dynamic, defaultValue, true);
+            Float value = sharedPreferences.getFloat(key, defaultValue.getFloat());
             String summary = getString(R.string.thresholding_dynamic_summary, Float.toString(value));
             findPreference(key).setSummary(Html.fromHtml(summary));
         }
 
         else if (key.equals(getString(R.string.pref_rounding_decimalplaces))) {
-            int value = sharedPreferences.getInt(key, 0);
+            int defaultValue = getResources().getInteger(R.integer.default_rounding_decimalplaces);
+            int value = sharedPreferences.getInt(key, defaultValue);
             findPreference(key).setSummary(Integer.toString(value));
         }
     }
@@ -273,10 +287,14 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
         return findPreference(getString(resourceId));
     }
 
-    private void updateAxisFromPreference(int editTextResId, int preferenceResId) {
+    private void updateAxisFromPreference(int editTextResId, int preferenceResId, int defaultResId) {
         EditText editText = mCalibrationDialogContent.findViewById(editTextResId);
         SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
-        Float value = sharedPreferences.getFloat(getString(preferenceResId), 0.0f);
+
+        TypedValue defaultValue = new TypedValue();
+        getResources().getValue(defaultResId, defaultValue, true);
+
+        Float value = sharedPreferences.getFloat(getString(preferenceResId), defaultValue.getFloat());
         editText.setText(Float.toString(value));
     }
 

@@ -1,0 +1,9 @@
+repositories {
+    jcenter()
+}
+
+dependencies {
+	testCompile 'junit:junit:4.12'
+    compile 'org.codehaus.groovy:groovy:2.4.4'
+    compile 'com.sun.codemodel:codemodel:2.6'
+}

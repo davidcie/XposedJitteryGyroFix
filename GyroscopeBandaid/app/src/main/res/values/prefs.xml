@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Defaults -->
-    <string name="pref_smoothing_algorithm_default">median</string>
-    <integer name="pref_smoothing_sample_default">10</integer>
-    <item name="pref_smoothing_alpha_default" format="float" type="string">0.5</item>
+    <string name="default_smoothing_algorithm">median</string>
+    <integer name="default_smoothing_sample">10</integer>
+    <integer name="default_rounding_decimalplaces">5</integer>
+    <item name="default_calibration_x" format="float" type="string">0.0</item>
+    <item name="default_calibration_y" format="float" type="string">0.0</item>
+    <item name="default_calibration_z" format="float" type="string">0.0</item>
+    <item name="default_smoothing_alpha" format="float" type="string">0.5</item>
+    <item name="default_threshold_static" format="float" type="string">0.0</item>
+    <item name="default_threshold_dynamic" format="float" type="string">0.0</item>
 
-    <!-- Preference names -->
+    <!-- Preference keys -->
     <string name="pref_global_enabled">global_enabled</string>
     <string name="pref_calibration_enabled">calibration_enabled</string>
-    <string name="pref_calibration_values">calibration_values</string>
     <string name="pref_calibration_value_x">calibration_value_x</string>
     <string name="pref_calibration_value_y">calibration_value_y</string>
     <string name="pref_calibration_value_z">calibration_value_z</string>
-
     <string name="pref_inversion_enabled">inversion_enabled</string>
     <string name="pref_inversion_axes">inversion_axes</string>
-
     <string name="pref_smoothing_enabled">smoothing_enabled</string>
     <string name="pref_smoothing_algorithm">smoothing_algorithm</string>
     <string name="pref_smoothing_algorithm_median">median</string>
@@ -24,11 +27,9 @@
     <string name="pref_smoothing_algorithm_addsmooth">addsmooth</string>
     <string name="pref_smoothing_sample">smoothing_sample</string>
     <string name="pref_smoothing_alpha">smoothing_alpha</string>
-
     <string name="pref_thresholding_enabled">thresholding_enabled</string>
     <string name="pref_thresholding_static">thresholding_static</string>
     <string name="pref_thresholding_dynamic">thresholding_dynamic</string>
-
     <string name="pref_rounding_enabled">rounding_enabled</string>
     <string name="pref_rounding_decimalplaces">rounding_decimalplaces</string>
 

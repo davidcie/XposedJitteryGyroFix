@@ -16,11 +16,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.TextView;
 
-import net.davidcie.gyroscopebandaid.EnginePreferences;
 import net.davidcie.gyroscopebandaid.R;
+import net.davidcie.gyroscopebandaid.Util;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
 import java.util.Locale;
@@ -80,7 +79,7 @@ public class StatusTab extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(EnginePreferences.LOG_TAG, "StatusTab: Trying to bind to service");
+        Log.d(Util.LOG_TAG, "StatusTab: Trying to bind to service");
         Intent wantService = new Intent(getActivity(), GyroService.class);
         getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
     }
@@ -88,7 +87,7 @@ public class StatusTab extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(EnginePreferences.LOG_TAG, "StatusTab: Unbinding from service");
+        Log.d(Util.LOG_TAG, "StatusTab: Unbinding from service");
         if (mServiceBound) {
             if (mServiceMessenger != null) {
                 Message message = Message.obtain(null, GyroService.UNREGISTER_CLIENT);
@@ -128,7 +127,7 @@ public class StatusTab extends Fragment {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case GyroService.NEW_READING:
-                    Log.d(EnginePreferences.LOG_TAG, "StatusTab: Received NEW_READING");
+                    Log.d(Util.LOG_TAG, "StatusTab: Received NEW_READING");
                     Bundle data = msg.getData();
                     float[] original = data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES);
                     float[] processed = data.getFloatArray(GyroService.KEY_PROCESSED_VALUES);

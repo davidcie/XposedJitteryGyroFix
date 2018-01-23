@@ -13,13 +13,12 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import net.davidcie.gyroscopebandaid.Engine;
-import net.davidcie.gyroscopebandaid.EnginePreferences;
-
-import static net.davidcie.gyroscopebandaid.Util.isXposedInstalled;
+import net.davidcie.gyroscopebandaid.Util;
 
 public class GyroService extends Service {
 
@@ -49,13 +48,13 @@ public class GyroService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        mEngine = new Engine(false, isXposedInstalled(getPackageManager()));
+        mEngine = new Engine(false, PreferenceManager.getDefaultSharedPreferences(this));
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mGyroListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
-                Log.d(EnginePreferences.LOG_TAG, "GyroService: Received SensorEvent");
+                Log.d(Util.LOG_TAG, "GyroService: Received SensorEvent");
                 float[] originalValues = new float[3];
                 System.arraycopy(sensorEvent.values, 0, originalValues, 0, 3);
                 mEngine.newReading(sensorEvent.values);
@@ -82,18 +81,18 @@ public class GyroService extends Service {
     }
 
     public void play() {
-        Log.d(EnginePreferences.LOG_TAG, "GyroService: play(), mSensorActive=" + mSensorActive +
-                                         ", mGyroscope" + (mGyroscope == null ? "=null" : "!=null"));
+        Log.d(Util.LOG_TAG, "GyroService: play(), mSensorActive=" + mSensorActive +
+                            ", mGyroscope" + (mGyroscope == null ? "=null" : "!=null"));
         if (!mSensorActive && mGyroscope != null) {
-            Log.d(EnginePreferences.LOG_TAG, "GyroService: Enabling sensor");
+            Log.d(Util.LOG_TAG, "GyroService: Enabling sensor");
             mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
 
     public void pause() {
-        Log.d(EnginePreferences.LOG_TAG, "GyroService: pause(), mSensorActive=" + mSensorActive);
+        Log.d(Util.LOG_TAG, "GyroService: pause(), mSensorActive=" + mSensorActive);
         if (mSensorActive) {
-            Log.d(EnginePreferences.LOG_TAG, "GyroService: Disabling sensor");
+            Log.d(Util.LOG_TAG, "GyroService: Disabling sensor");
             mSensorManager.unregisterListener(mGyroListener);
         }
     }
@@ -116,19 +115,19 @@ public class GyroService extends Service {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case GyroService.REGISTER_CLIENT:
-                    Log.d(EnginePreferences.LOG_TAG, "GyroService: Received REGISTER_CLIENT");
+                    Log.d(Util.LOG_TAG, "GyroService: Received REGISTER_CLIENT");
                     mClientMessenger = msg.replyTo;
                     break;
                 case GyroService.UNREGISTER_CLIENT:
-                    Log.d(EnginePreferences.LOG_TAG, "GyroService: Received UNREGISTER_CLIENT");
+                    Log.d(Util.LOG_TAG, "GyroService: Received UNREGISTER_CLIENT");
                     mClientMessenger = null;
                     break;
                 case GyroService.PLAY:
-                    Log.d(EnginePreferences.LOG_TAG, "GyroService: Received PLAY");
+                    Log.d(Util.LOG_TAG, "GyroService: Received PLAY");
                     play();
                     break;
                 case GyroService.PAUSE:
-                    Log.d(EnginePreferences.LOG_TAG, "GyroService: Received PAUSE");
+                    Log.d(Util.LOG_TAG, "GyroService: Received PAUSE");
                     pause();
                     break;
                 default:

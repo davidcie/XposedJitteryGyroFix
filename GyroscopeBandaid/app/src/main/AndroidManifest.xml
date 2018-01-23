@@ -34,6 +34,11 @@
 
         <service android:name="net.davidcie.gyroscopebandaid.services.GyroService" />
 
+        <provider
+            android:name=".GyroBandaidPreferenceProvider"
+            android:authorities="net.davidcie.gyroscopebandaid"
+            android:exported="true"/>
+
     </application>
 
 </manifest>
