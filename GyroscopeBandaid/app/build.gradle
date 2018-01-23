@@ -61,16 +61,13 @@ dependencies {
     compile 'com.github.timrijckaert:FloatingMusicActionButton:v2.0.4'
     // Slider preference
     compile 'com.github.jayschwa:AndroidSliderPreference:v1.0.1'
-    // Other
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.android.support:design:27.0.2'
-    //compile 'com.android.support:appcompat-v7:27.0.2'
-    //compile 'com.android.support:preference-v14:27.0.2'
-    // Some useful utility functions
-    compile group: 'com.google.guava', name: 'guava', version: '23.5-android'
     // Remote preference access
     compile 'com.crossbowffs.remotepreferences:remotepreferences:0.5'
     // EditFloatPreference and EditIntPreference
     compile 'com.mapzen.android:prefs-plus:1.0.0'
+
+    // Other
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.android.support:design:27.0.2'
 }
 

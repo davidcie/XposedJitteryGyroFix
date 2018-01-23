@@ -22,8 +22,6 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.common.base.Joiner;
-
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
 
@@ -184,7 +182,7 @@ public class SettingsTab extends PreferenceFragment implements SharedPreferences
                         R.array.inversion_axes_values,
                         axisValue));
             // Produce a comma-separated list and assign to summary
-            String summary = Joiner.on(", ").join(axisEntries);
+            String summary = Util.joinOn(axisEntries, ", ");
             findPreference(key).setSummary(summary.length() > 0
                     ? summary
                     : getString(R.string.inversion_summary_none));

@@ -2,6 +2,8 @@ package net.davidcie.gyroscopebandaid;
 
 import android.content.pm.PackageManager;
 
+import java.util.List;
+
 public class Util {
 
     public static final String LOG_TAG = "GyroBandaid";
@@ -9,6 +11,17 @@ public class Util {
 
     public static boolean isModuleActivated() {
         return false;
+    }
+
+    public static String joinOn(List<String> strings, String separator) {
+        StringBuilder builder = new StringBuilder();
+        boolean first = true;
+        for (String s : strings) {
+            if (first) first = false;
+            else builder.append(separator);
+            builder.append(s);
+        }
+        return builder.toString();
     }
 
     public static String printArray(float[] array) {
