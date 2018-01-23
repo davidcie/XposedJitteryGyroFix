@@ -16,10 +16,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import net.davidcie.gyroscopebandaid.EnginePreferences;
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.services.GyroService;
+
+import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
@@ -100,6 +104,22 @@ public class StatusTab extends Fragment {
         }
     }
 
+    private void updateValues(float[] original, float[] processed) {
+        View view = getView();
+        TextView temp;
+        if (view == null) return;
+
+        // X
+        temp = view.findViewById(R.id.original_x);
+        temp.setText(String.format(Locale.getDefault(), "%.10f", original[0]));
+        // Y
+        temp = view.findViewById(R.id.original_y);
+        temp.setText(String.format(Locale.getDefault(), "%.10f", original[1]));
+        // Z
+        temp = view.findViewById(R.id.original_y);
+        temp.setText(String.format(Locale.getDefault(), "%.10f", original[2]));
+    }
+
     /**
      * Handler for incoming messages from the service.
      */
@@ -109,6 +129,10 @@ public class StatusTab extends Fragment {
             switch (msg.what) {
                 case GyroService.NEW_READING:
                     Log.d(EnginePreferences.LOG_TAG, "StatusTab: Received NEW_READING");
+                    Bundle data = msg.getData();
+                    float[] original = data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES);
+                    float[] processed = data.getFloatArray(GyroService.KEY_PROCESSED_VALUES);
+                    updateValues(original, processed);
                     break;
                 default:
                     super.handleMessage(msg);

@@ -88,7 +88,7 @@ public class GyroService extends Service {
     }
 
     /**
-     * When binding to the service, we return an interface to our messenger
+     * When anyone tries to bind to the service, return messenger
      * for sending messages to the service.
      */
     @Nullable
