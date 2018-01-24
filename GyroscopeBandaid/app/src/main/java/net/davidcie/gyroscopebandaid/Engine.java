@@ -36,7 +36,7 @@ public class Engine {
     }
 
     public void newReading(float[] reading) {
-        Log.d(Util.LOG_TAG, "Engine: New reading " + Util.printArray(reading));
+        Log.v(Util.LOG_TAG, "Engine: New reading " + Util.printArray(reading));
 
         // TODO: replace with a listener that changes without polling
         // Refresh preferences in case the user changed a setting

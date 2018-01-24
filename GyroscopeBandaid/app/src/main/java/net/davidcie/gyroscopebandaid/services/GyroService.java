@@ -54,7 +54,7 @@ public class GyroService extends Service {
         mGyroListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
-                Log.d(Util.LOG_TAG, "GyroService: Received SensorEvent");
+                Log.v(Util.LOG_TAG, "GyroService: Received SensorEvent " + Util.printArray(sensorEvent.values));
                 float[] originalValues = new float[3];
                 System.arraycopy(sensorEvent.values, 0, originalValues, 0, 3);
                 mEngine.newReading(sensorEvent.values);
@@ -81,19 +81,18 @@ public class GyroService extends Service {
     }
 
     public void play() {
-        Log.d(Util.LOG_TAG, "GyroService: play(), mSensorActive=" + mSensorActive +
-                            ", mGyroscope" + (mGyroscope == null ? "=null" : "!=null"));
         if (!mSensorActive && mGyroscope != null) {
             Log.d(Util.LOG_TAG, "GyroService: Enabling sensor");
             mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+            mSensorActive = true;
         }
     }
 
     public void pause() {
-        Log.d(Util.LOG_TAG, "GyroService: pause(), mSensorActive=" + mSensorActive);
         if (mSensorActive) {
             Log.d(Util.LOG_TAG, "GyroService: Disabling sensor");
-            mSensorManager.unregisterListener(mGyroListener);
+            mSensorManager.unregisterListener(mGyroListener, mGyroscope);
+            mSensorActive = false;
         }
     }
 
@@ -120,6 +119,7 @@ public class GyroService extends Service {
                     break;
                 case GyroService.UNREGISTER_CLIENT:
                     Log.d(Util.LOG_TAG, "GyroService: Received UNREGISTER_CLIENT");
+                    pause();
                     mClientMessenger = null;
                     break;
                 case GyroService.PLAY:

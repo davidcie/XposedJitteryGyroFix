@@ -26,6 +26,8 @@ import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
+    private boolean isVisible = false;
+
     // Endpoint for services to send messages to StatusTab
     final Messenger mClientMessenger = new Messenger(new IncomingHandler());
 
@@ -46,6 +48,7 @@ public class StatusTab extends Fragment {
                 Message message = Message.obtain(null, GyroService.REGISTER_CLIENT);
                 message.replyTo = mClientMessenger;
                 mServiceMessenger.send(message);
+                setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
             } catch (RemoteException e) {
                 // Service crashed before we managed to connect?
             }
@@ -60,9 +63,15 @@ public class StatusTab extends Fragment {
 
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
+        Log.v(Util.LOG_TAG, "StatusTab: setUserVisibleHint(" + isVisibleToUser + ") ");
         super.setUserVisibleHint(isVisibleToUser);
+        isVisible = isVisibleToUser;
+        setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
+    }
+
+    private void setServicePlayback(int playOrPause) {
         if (mServiceBound) {
-            Message message = Message.obtain(null, isVisibleToUser ? GyroService.PLAY : GyroService.PAUSE);
+            Message message = Message.obtain(null, playOrPause);
             try {
                 mServiceMessenger.send(message);
             } catch (RemoteException e) {
@@ -78,6 +87,7 @@ public class StatusTab extends Fragment {
 
     @Override
     public void onStart() {
+        Log.d(Util.LOG_TAG, "StatusTab: onStart");
         super.onStart();
         Log.d(Util.LOG_TAG, "StatusTab: Trying to bind to service");
         Intent wantService = new Intent(getActivity(), GyroService.class);
@@ -86,7 +96,27 @@ public class StatusTab extends Fragment {
 
     @Override
     public void onStop() {
+        Log.d(Util.LOG_TAG, "StatusTab: onStop");
         super.onStop();
+    }
+
+    @Override
+    public void onPause() {
+        Log.d(Util.LOG_TAG, "StatusTab: onPause");
+        super.onPause();
+        setServicePlayback(GyroService.PAUSE);
+    }
+
+    @Override
+    public void onResume() {
+        Log.d(Util.LOG_TAG, "StatusTab: onResume");
+        super.onResume();
+        if (isVisible) setServicePlayback(GyroService.PLAY);
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(Util.LOG_TAG, "StatusTab: onDestroy");
         Log.d(Util.LOG_TAG, "StatusTab: Unbinding from service");
         if (mServiceBound) {
             if (mServiceMessenger != null) {
@@ -101,6 +131,7 @@ public class StatusTab extends Fragment {
             getActivity().unbindService(mServiceConnection);
             mServiceBound = false;
         }
+        super.onDestroy();
     }
 
     private void updateValues(float[] original, float[] processed) {
@@ -115,7 +146,7 @@ public class StatusTab extends Fragment {
         temp = view.findViewById(R.id.original_y);
         temp.setText(String.format(Locale.getDefault(), "%.10f", original[1]));
         // Z
-        temp = view.findViewById(R.id.original_y);
+        temp = view.findViewById(R.id.original_z);
         temp.setText(String.format(Locale.getDefault(), "%.10f", original[2]));
     }
 
@@ -127,7 +158,6 @@ public class StatusTab extends Fragment {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case GyroService.NEW_READING:
-                    Log.d(Util.LOG_TAG, "StatusTab: Received NEW_READING");
                     Bundle data = msg.getData();
                     float[] original = data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES);
                     float[] processed = data.getFloatArray(GyroService.KEY_PROCESSED_VALUES);
