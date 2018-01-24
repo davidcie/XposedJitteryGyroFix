@@ -22,11 +22,15 @@ import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+
 import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
     private boolean isVisible = false;
+    private CircularFifoQueue<float[]> rawHistory = new CircularFifoQueue<>(3);
+    private CircularFifoQueue<float[]> processedHistory = new CircularFifoQueue<>(3);
 
     // Endpoint for services to send messages to StatusTab
     final Messenger mClientMessenger = new Messenger(new IncomingHandler());
@@ -82,6 +86,10 @@ public class StatusTab extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        /*gridLayout = (GridLayout) findViewById(R.id.gridlayout_main);
+        gridLayout.setUseDefaultMargins(false);
+        gridLayout.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
+        gridLayout.setRowOrderPreserved(false); remove grid padding*/
         return inflater.inflate(R.layout.tab_status, container, false);
     }
 
@@ -134,20 +142,34 @@ public class StatusTab extends Fragment {
         super.onDestroy();
     }
 
-    private void updateValues(float[] original, float[] processed) {
+    private void updateValues() {
         View view = getView();
-        TextView temp;
         if (view == null) return;
 
-        // X
-        temp = view.findViewById(R.id.original_x);
-        temp.setText(String.format(Locale.getDefault(), "%.10f", original[0]));
-        // Y
-        temp = view.findViewById(R.id.original_y);
-        temp.setText(String.format(Locale.getDefault(), "%.10f", original[1]));
-        // Z
-        temp = view.findViewById(R.id.original_z);
-        temp.setText(String.format(Locale.getDefault(), "%.10f", original[2]));
+        // Nicely print history
+        // TODO: should really keep formatted values in memory
+        boolean first = true;
+        StringBuilder builderX = new StringBuilder();
+        StringBuilder builderY = new StringBuilder();
+        StringBuilder builderZ = new StringBuilder();
+        for (float[] raw : rawHistory) {
+            if (first) {
+                first = false;
+            }
+            else {
+                builderX.append("\n");
+                builderY.append("\n");
+                builderZ.append("\n");
+            }
+            builderX.append(String.format(Locale.getDefault(), "%.10f", raw[0]));
+            builderY.append(String.format(Locale.getDefault(), "%.10f", raw[1]));
+            builderZ.append(String.format(Locale.getDefault(), "%.10f", raw[2]));
+        }
+
+        // Assign formatted history values to text boxes
+        ((TextView) view.findViewById(R.id.original_x)).setText(builderX.toString());
+        ((TextView) view.findViewById(R.id.original_y)).setText(builderY.toString());
+        ((TextView) view.findViewById(R.id.original_z)).setText(builderZ.toString());
     }
 
     /**
@@ -159,9 +181,9 @@ public class StatusTab extends Fragment {
             switch (msg.what) {
                 case GyroService.NEW_READING:
                     Bundle data = msg.getData();
-                    float[] original = data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES);
-                    float[] processed = data.getFloatArray(GyroService.KEY_PROCESSED_VALUES);
-                    updateValues(original, processed);
+                    rawHistory.add(data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES));
+                    processedHistory.add(data.getFloatArray(GyroService.KEY_PROCESSED_VALUES));
+                    updateValues();
                     break;
                 default:
                     super.handleMessage(msg);

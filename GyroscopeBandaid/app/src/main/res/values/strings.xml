@@ -14,7 +14,7 @@
     <string name="y_axis">Y axis</string>
     <string name="z_axis">Z axis</string>
 
-    <!-- Calibration -->
+    <!-- Settings: Calibration -->
     <string name="calibration_title">Calibration</string>
     <string name="calibration_enabled">Using values below to offset hardware readings by a specified amount.</string>
     <string name="calibration_disabled">No constant offset applied to hardware readings.</string>
@@ -25,7 +25,7 @@
     <string name="calibration_dialog_prepare">Keep your phone still, calibration will start in a few seconds.</string>
     <string name="calibration_dialog_done">Calibration complete, suggested values have been updated.</string>
 
-    <!-- Inversion -->
+    <!-- Settings: Inversion -->
     <string name="inversion_title">Inversion</string>
     <string name="inversion_enabled">Inverting some of the axes to correct problems found in a few exotic devices.</string>
     <string name="inversion_disabled">Axes of rotation are oriented correctly by this device.</string>
@@ -42,7 +42,7 @@
         <item>z</item>
     </string-array>
 
-    <!-- Smoothing -->
+    <!-- Settings: Smoothing -->
     <string name="smoothing_title">Smoothing</string>
     <string name="smoothing_enabled">Processing consecutive readings with an algorithm to reduce jitter.</string>
     <string name="smoothing_disabled">Treating each sensor reading individually.</string>
@@ -63,7 +63,7 @@
     <string name="smoothing_alpha">Smoothing strength</string>
     <string name="smoothing_explanation">Select the amount of smoothing to apply. Only used by more advanced filters. Suggested starting point is about half way.</string>
 
-    <!-- Thresholding -->
+    <!-- Settings: Thresholding -->
     <string name="thresholding_title">Thresholding</string>
     <string name="thresholding_enabled">Interpreting smaller sensor readings as noise and outputting zero instead.</string>
     <string name="thresholding_disabled">Taking into account even smaller sensor readings.</string>
@@ -73,13 +73,15 @@
     <string name="thresholding_dynamic">Dynamic</string>
     <string name="thresholding_dynamic_summary">Require a more dynamic motion for your device to &lt;b>continue&lt;/b> reporting movement. &lt;i>Current value: %s.&lt;/i></string>
 
-    <!-- Rounding -->
+    <!-- Settings: Rounding -->
     <string name="rounding_title">Rounding</string>
     <string name="rounding_enabled">Round values to reduce small jitter and reduce CPU load.</string>
     <string name="rounding_disabled">Output computed values as-is.</string>
     <string name="rounding_decimalplaces">Decimal places</string>
 
-    <!-- Status tab -->
+    <!-- Status -->
     <string name="status_waiting">Waiting for motion…</string>
+    <string name="title_original_values">Raw sensor readings</string>
+    <string name="title_processed_values">Processed sensor readings</string>
 
 </resources>
