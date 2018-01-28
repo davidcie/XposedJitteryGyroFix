@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,6 +18,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
@@ -38,6 +47,11 @@ public class StatusTab extends Fragment {
     // Messanger for sending messages to gyroscope service over a connection
     Messenger mServiceMessenger = null;
     boolean mServiceBound = false;
+
+    // Charts
+    LineChart chartX;
+    LineChart chartY;
+    LineChart chartZ;
 
     /**
      * Class for interacting with the main interface of the service.
@@ -90,7 +104,43 @@ public class StatusTab extends Fragment {
         gridLayout.setUseDefaultMargins(false);
         gridLayout.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
         gridLayout.setRowOrderPreserved(false); remove grid padding*/
-        return inflater.inflate(R.layout.tab_status, container, false);
+        View view = inflater.inflate(R.layout.tab_status, container, false);
+        chartX = view.findViewById(R.id.chart_x);
+        chartY = view.findViewById(R.id.chart_y);
+        chartZ = view.findViewById(R.id.chart_z);
+
+        setupChart(chartX);
+        setupChart(chartY);
+        setupChart(chartZ);
+        return view;
+    }
+
+    private void setupChart(LineChart chart) {
+        chart.getDescription().setEnabled(false);
+        chart.setTouchEnabled(false);
+        chart.setPinchZoom(false);
+        chart.setAutoScaleMinMaxEnabled(false);
+        chart.setScaleEnabled(true);
+        chart.setDrawGridBackground(false);
+        chart.setBackgroundColor(Color.WHITE);
+        chart.getAxisRight().setEnabled(false);
+        chart.getLegend().setEnabled(false);
+
+        YAxis y = chart.getAxisLeft();
+        y.setAxisMinimum(-1.0f);
+        y.setAxisMaximum(1.0f);
+        y.setDrawLabels(false);
+        y.setDrawGridLines(false);
+        y.setDrawAxisLine(false);
+
+        XAxis x = chart.getXAxis();
+        x.setDrawLabels(false);
+        x.setDrawGridLines(false);
+        x.setDrawAxisLine(false);
+
+        LineData data = new LineData();
+        chart.setData(data);
+
     }
 
     @Override
@@ -142,7 +192,7 @@ public class StatusTab extends Fragment {
         super.onDestroy();
     }
 
-    private void updateValues() {
+    private void updateValues(float[] newOriginal, float[] newProcessed) {
         View view = getView();
         if (view == null) return;
 
@@ -170,6 +220,27 @@ public class StatusTab extends Fragment {
         ((TextView) view.findViewById(R.id.original_x)).setText(builderX.toString());
         ((TextView) view.findViewById(R.id.original_y)).setText(builderY.toString());
         ((TextView) view.findViewById(R.id.original_z)).setText(builderZ.toString());
+
+        // Update charts
+        LineData dataX = chartX.getData();
+        float newValueX = Util.limit(newOriginal[0], -1.0f, 1.0f);
+        if (dataX != null) {
+            ILineDataSet setX = dataX.getDataSetByIndex(0);
+            if (setX == null) {
+                LineDataSet set = new LineDataSet(null, null);
+                set.setDrawValues(false);
+                set.setLineWidth(2f);
+                set.setDrawCircles(false);
+                dataX.addDataSet(set);
+                setX = set;
+            }
+            //noinspection SuspiciousNameCombination
+            dataX.addEntry(new Entry(setX.getEntryCount(), newValueX), 0);
+            dataX.notifyDataChanged();
+            chartX.notifyDataSetChanged();
+            chartX.setVisibleXRangeMaximum(15);
+            chartX.moveViewToX(dataX.getEntryCount());
+        }
     }
 
     /**
@@ -181,9 +252,11 @@ public class StatusTab extends Fragment {
             switch (msg.what) {
                 case GyroService.NEW_READING:
                     Bundle data = msg.getData();
-                    rawHistory.add(data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES));
-                    processedHistory.add(data.getFloatArray(GyroService.KEY_PROCESSED_VALUES));
-                    updateValues();
+                    float[] newOriginal = data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES);
+                    float[] newProcessed = data.getFloatArray(GyroService.KEY_PROCESSED_VALUES);
+                    rawHistory.add(newOriginal);
+                    processedHistory.add(newProcessed);
+                    updateValues(newOriginal, newProcessed);
                     break;
                 default:
                     super.handleMessage(msg);
