@@ -125,10 +125,11 @@ public class StatusTab extends Fragment {
         chart.setBackgroundColor(Color.WHITE);
         chart.getAxisRight().setEnabled(false);
         chart.getLegend().setEnabled(false);
+        chart.setVisibleXRangeMaximum(15);
 
         YAxis y = chart.getAxisLeft();
-        y.setAxisMinimum(-1.0f);
-        y.setAxisMaximum(1.0f);
+        y.setAxisMinimum(-1.1f);
+        y.setAxisMaximum(1.1f);
         y.setDrawLabels(false);
         y.setDrawGridLines(false);
         y.setDrawAxisLine(false);
@@ -138,9 +139,17 @@ public class StatusTab extends Fragment {
         x.setDrawGridLines(false);
         x.setDrawAxisLine(false);
 
-        LineData data = new LineData();
-        chart.setData(data);
+        LineDataSet dataSet = new LineDataSet(null, null);
+        dataSet.setDrawValues(false);
+        dataSet.setLineWidth(2f);
+        dataSet.setDrawCircles(false);
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        dataSet.setCubicIntensity(0.2f);
 
+        LineData data = new LineData();
+        data.addDataSet(dataSet);
+        data.addEntry(new Entry(0, 0), 0);
+        chart.setData(data);
     }
 
     @Override
@@ -222,24 +231,17 @@ public class StatusTab extends Fragment {
         ((TextView) view.findViewById(R.id.original_z)).setText(builderZ.toString());
 
         // Update charts
-        LineData dataX = chartX.getData();
         float newValueX = Util.limit(newOriginal[0], -1.0f, 1.0f);
+        float newValueY = Util.limit(newOriginal[1], -1.0f, 1.0f);
+        float newValueZ = Util.limit(newOriginal[2], -1.0f, 1.0f);
+        LineData dataX = chartX.getData();
         if (dataX != null) {
             ILineDataSet setX = dataX.getDataSetByIndex(0);
-            if (setX == null) {
-                LineDataSet set = new LineDataSet(null, null);
-                set.setDrawValues(false);
-                set.setLineWidth(2f);
-                set.setDrawCircles(false);
-                dataX.addDataSet(set);
-                setX = set;
-            }
             //noinspection SuspiciousNameCombination
             dataX.addEntry(new Entry(setX.getEntryCount(), newValueX), 0);
             dataX.notifyDataChanged();
             chartX.notifyDataSetChanged();
-            chartX.setVisibleXRangeMaximum(15);
-            chartX.moveViewToX(dataX.getEntryCount());
+            chartX.moveViewToAnimated(dataX.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, 50);
         }
     }
 
