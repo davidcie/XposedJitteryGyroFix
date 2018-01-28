@@ -13,6 +13,10 @@ public class Util {
         return false;
     }
 
+    public static float limit(float value, float lowerLimit, float upperLimit) {
+        return Math.max(lowerLimit, Math.min(upperLimit, value));
+    }
+
     public static String joinOn(List<String> strings, String separator) {
         StringBuilder builder = new StringBuilder();
         boolean first = true;
