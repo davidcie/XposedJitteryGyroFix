@@ -5,26 +5,22 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 import android.text.method.ScrollingMovementMethod;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.animation.LinearInterpolator;
 import android.widget.Scroller;
 import android.widget.TextView;
-
-import net.davidcie.gyroscopebandaid.Util;
 
 @SuppressWarnings({"unused", "SameParameterValue"})
 @SuppressLint("AppCompatCustomView")
 public class VerticalScrollingTextView extends TextView {
 
     private static final float DEFAULT_LINES_PER_SECOND = 0.5f;
+
     private float mLinesPerSecond = DEFAULT_LINES_PER_SECOND;
     private Scroller mLinearScroller;
-
     private int mLineHeight = 0;
+    private int mPreviousLineCount = 0;
     private int mStartY = 0;
     private boolean mIsFirstScroll = true;
-    private int mPreviousLineCount = 0;
-    private boolean oneShot = false;
 
     public VerticalScrollingTextView(Context context) {
         super(context);
@@ -51,6 +47,21 @@ public class VerticalScrollingTextView extends TextView {
         mLinearScroller = new Scroller(context, new LinearInterpolator());
         setScroller(mLinearScroller);
         setMovementMethod(new ScrollingMovementMethod());
+
+        // Marquee test
+        setVerticalFadingEdgeEnabled(true);
+        setFadingEdgeLength(50);
+        setEllipsize(null);
+    }
+
+    /**
+     * Prevents a small visual glitch whereby at the very beginning when there are
+     * values coming from the bottom but none are up top, a bottom fading edge
+     * would be drawn and then disappear after a few seconds.
+     */
+    @Override
+    protected float getBottomFadingEdgeStrength() {
+        return 0.0f;
     }
 
     @Override
@@ -61,53 +72,29 @@ public class VerticalScrollingTextView extends TextView {
         int visibleHeight = viewHeight - getPaddingBottom() - getPaddingTop();
         mLineHeight = getLineHeight();
         mStartY = visibleHeight * -1;
-        Log.d("Hmm", "onSizeChanged viewHeight=" + viewHeight + " visibleHeight=" + visibleHeight + " mStartY=" + mStartY + " mLineHeight=" + mLineHeight + " getHorizontalScrollbarHeight=" + getHorizontalScrollbarHeight());
 
+        // Adjust distance if view taller because we now see more of the text
         if (!mLinearScroller.isFinished() && oldh != h) {
             int diff = h - oldh;
             int oldY = mLinearScroller.getFinalY();
             int newY = oldY - diff;
             mLinearScroller.setFinalY(newY);
-            Log.d("Hmm", "  diff=" + diff + " oldY=" + oldY + " newY=" + newY);
         }
-
-        Log.d("Hmm", "!!! " + getIncludeFontPadding());
-
-
-        // if scrolling, subtract from distance if view taller because we now see more of the text
     }
 
     public void scroll() {
 
-        // if not scrolling and is first scroll, start from -view
-        // if not scrolling, startScroll from current scroll position
-        // if scrolling, compute a new finalY (lineHeight*lineCount) and extend duration
-
-        //if (!oneShot) oneShot = true;
-        //else return;
-
-        if (mLinearScroller.isFinished() && mIsFirstScroll) {
-            Log.d("Hmm", "scroll mIsFirstScroll");
-            mIsFirstScroll = false;
-            int distanceY = getLineCount() * mLineHeight;
-            //int distanceY = (mStartY*-1) + getLineCount() * mLineHeight;
-            int duration = computeScrollDuration(getLineCount());
-            Log.d("Hmm", "  lines=" + getLineCount() + " distanceY=" + distanceY + " duration=" + duration);
-            mLinearScroller.startScroll(0, mStartY, 0, distanceY, duration);
-            Log.d("Hmm", "  getFinalY=" + mLinearScroller.getFinalY());
-        } else if (mLinearScroller.isFinished()) {
-            Log.d("Hmm", "scroll isFinished");
+        if (mLinearScroller.isFinished()) {
+            int startPos = mIsFirstScroll ? mStartY : mLinearScroller.getCurrY();
             int newLines = getLineCount() - mPreviousLineCount;
             int distance = newLines * mLineHeight;
             int duration = computeScrollDuration(newLines);
-            Log.d("Hmm", "  newLines=" + newLines + " distance=" + distance + " duration=" + duration);
-            mLinearScroller.startScroll(0, mLinearScroller.getCurrY(), 0, distance, duration);
+            mLinearScroller.startScroll(0, startPos, 0, distance, duration);
+            mIsFirstScroll = false;
         } else {
-            Log.d("Hmm", "scroll !isFinished");
-            int finalY = getLineCount() * mLineHeight;
+            int newPos = mStartY + getLineCount() * mLineHeight;
             int extraDuration = computeScrollDuration(getLineCount() - mPreviousLineCount);
-            Log.d("Hmm", "  finalY=" + finalY + " extraDuration=" + extraDuration);
-            mLinearScroller.setFinalY(finalY);
+            mLinearScroller.setFinalY(newPos);
             mLinearScroller.extendDuration(extraDuration);
         }
 
