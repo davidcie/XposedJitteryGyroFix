@@ -160,7 +160,7 @@ public class StatusTab extends Fragment {
         setupChart(chartZ);
 
         tvContent = view.findViewById(R.id.tvContent);
-        tvContent.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS / 2);
+        tvContent.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS * 2);
 
         /*switcherX = view.findViewById(R.id.switcher_x);
         switcherX.setFactory(new ViewSwitcher.ViewFactory() {

@@ -24,6 +24,7 @@ public class VerticalScrollingTextView extends TextView {
     private int mStartY = 0;
     private boolean mIsFirstScroll = true;
     private int mPreviousLineCount = 0;
+    private boolean oneShot = false;
 
     public VerticalScrollingTextView(Context context) {
         super(context);
@@ -41,6 +42,12 @@ public class VerticalScrollingTextView extends TextView {
     }
 
     private void initialize(Context context) {
+        // Disable extra top & bottom padding that's there to make room for accents
+        setIncludeFontPadding(false);
+        // Disable scrollbars even if user forgot to do so
+        setHorizontalScrollBarEnabled(false);
+        setVerticalScrollBarEnabled(false);
+        // Prepare scrolling
         mLinearScroller = new Scroller(context, new LinearInterpolator());
         setScroller(mLinearScroller);
         setMovementMethod(new ScrollingMovementMethod());
@@ -54,7 +61,7 @@ public class VerticalScrollingTextView extends TextView {
         int visibleHeight = viewHeight - getPaddingBottom() - getPaddingTop();
         mLineHeight = getLineHeight();
         mStartY = visibleHeight * -1;
-        Log.d("Hmm", "onSizeChanged viewHeight=" + viewHeight + " visibleHeight=" + visibleHeight + " mStartY=" + mStartY + " mLineHeight=" + mLineHeight);
+        Log.d("Hmm", "onSizeChanged viewHeight=" + viewHeight + " visibleHeight=" + visibleHeight + " mStartY=" + mStartY + " mLineHeight=" + mLineHeight + " getHorizontalScrollbarHeight=" + getHorizontalScrollbarHeight());
 
         if (!mLinearScroller.isFinished() && oldh != h) {
             int diff = h - oldh;
@@ -63,6 +70,10 @@ public class VerticalScrollingTextView extends TextView {
             mLinearScroller.setFinalY(newY);
             Log.d("Hmm", "  diff=" + diff + " oldY=" + oldY + " newY=" + newY);
         }
+
+        Log.d("Hmm", "!!! " + getIncludeFontPadding());
+
+
         // if scrolling, subtract from distance if view taller because we now see more of the text
     }
 
@@ -72,10 +83,14 @@ public class VerticalScrollingTextView extends TextView {
         // if not scrolling, startScroll from current scroll position
         // if scrolling, compute a new finalY (lineHeight*lineCount) and extend duration
 
+        //if (!oneShot) oneShot = true;
+        //else return;
+
         if (mLinearScroller.isFinished() && mIsFirstScroll) {
             Log.d("Hmm", "scroll mIsFirstScroll");
             mIsFirstScroll = false;
-            int distanceY = (mStartY*-1) + getLineCount() * mLineHeight;
+            int distanceY = getLineCount() * mLineHeight;
+            //int distanceY = (mStartY*-1) + getLineCount() * mLineHeight;
             int duration = computeScrollDuration(getLineCount());
             Log.d("Hmm", "  lines=" + getLineCount() + " distanceY=" + distanceY + " duration=" + duration);
             mLinearScroller.startScroll(0, mStartY, 0, distanceY, duration);
@@ -85,7 +100,7 @@ public class VerticalScrollingTextView extends TextView {
             int newLines = getLineCount() - mPreviousLineCount;
             int distance = newLines * mLineHeight;
             int duration = computeScrollDuration(newLines);
-            Log.d("Hmm", "  newLines=" + newLines + " distance=" + distance + " duration" + duration);
+            Log.d("Hmm", "  newLines=" + newLines + " distance=" + distance + " duration=" + duration);
             mLinearScroller.startScroll(0, mLinearScroller.getCurrY(), 0, distance, duration);
         } else {
             Log.d("Hmm", "scroll !isFinished");
@@ -99,17 +114,8 @@ public class VerticalScrollingTextView extends TextView {
         mPreviousLineCount = getLineCount();
     }
 
-    public void pauseScroll() {
-        //mLinearScroller.pause
-    }
-
-    private void restartScroll() {
-        // if stopped, call .startScroll
-        // else .extendDuration & setFinalY
-    }
-
     private int computeScrollDuration(int linesToScroll) {
-        return (int) (linesToScroll / mLinesPerSecond * 1000);
+        return (int) ((1/mLinesPerSecond) * linesToScroll * 1000);
     }
 
     public void setLinesPerSecond(float linesPerSecond) {
