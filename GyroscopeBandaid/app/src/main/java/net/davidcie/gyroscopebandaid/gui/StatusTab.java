@@ -1,5 +1,6 @@
 package net.davidcie.gyroscopebandaid.gui;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
@@ -17,8 +18,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextSwitcher;
-import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -33,16 +32,12 @@ import net.davidcie.gyroscopebandaid.Util;
 import net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
-import org.apache.commons.collections4.queue.CircularFifoQueue;
-
 import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
     private final static int UPDATE_EVERY_MS = 2000;
     private boolean mIsVisible = false;
-    private CircularFifoQueue<float[]> mRawHistory = new CircularFifoQueue<>(3);
-    private CircularFifoQueue<float[]> mCookedHistory = new CircularFifoQueue<>(3);
     private Handler mUpdaterThread = new Handler();
     private Runnable mRequestReadingTask = new Runnable() {
         @Override
@@ -60,8 +55,9 @@ public class StatusTab extends Fragment {
     LineChart chartX;
     LineChart chartY;
     LineChart chartZ;
-    TextSwitcher switcherX;
-    VerticalScrollingTextView tvContent;
+    VerticalScrollingTextView historyViewX;
+    VerticalScrollingTextView historyViewY;
+    VerticalScrollingTextView historyViewZ;
 
     //region Service interaction
 
@@ -117,8 +113,6 @@ public class StatusTab extends Fragment {
                     Bundle data = msg.getData();
                     float[] raw = data.getFloatArray(GyroService.KEY_RAW_VALUES);
                     float[] cooked = data.getFloatArray(GyroService.KEY_COOKED_VALUES);
-                    mRawHistory.add(raw);
-                    mCookedHistory.add(cooked);
                     updateValues(raw, cooked);
                     break;
                 default:
@@ -143,6 +137,7 @@ public class StatusTab extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
+        View view = inflater.inflate(R.layout.tab_status, container, false);
 
         Intent wantService = new Intent(getActivity(), GyroService.class);
         getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
@@ -151,7 +146,7 @@ public class StatusTab extends Fragment {
         gridLayout.setUseDefaultMargins(false);
         gridLayout.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
         gridLayout.setRowOrderPreserved(false); remove grid padding*/
-        View view = inflater.inflate(R.layout.tab_status, container, false);
+
         chartX = view.findViewById(R.id.chart_x);
         chartY = view.findViewById(R.id.chart_y);
         chartZ = view.findViewById(R.id.chart_z);
@@ -159,23 +154,12 @@ public class StatusTab extends Fragment {
         setupChart(chartY);
         setupChart(chartZ);
 
-        tvContent = view.findViewById(R.id.tvContent);
-        tvContent.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS * 2);
-
-        /*switcherX = view.findViewById(R.id.switcher_x);
-        switcherX.setFactory(new ViewSwitcher.ViewFactory() {
-            @Override
-            public View makeView() {
-                TextView text = new TextView(getActivity());
-                text.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-                return text;
-            }
-        });
-
-        Animation animationOut = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_out_top);
-        Animation animationIn = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_bottom);
-        switcherX.setOutAnimation(animationOut);
-        switcherX.setInAnimation(animationIn);*/
+        historyViewX = view.findViewById(R.id.original_x);
+        historyViewX.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
+        historyViewY = view.findViewById(R.id.original_y);
+        historyViewY.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
+        historyViewZ = view.findViewById(R.id.original_z);
+        historyViewZ.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
 
         return view;
     }
@@ -260,48 +244,31 @@ public class StatusTab extends Fragment {
         chart.setData(data);
     }
 
+    @SuppressLint("SetTextI18n")
     private void updateValues(float[] latestRaw, float[] latestCooked) {
         View view = getView();
         if (view == null) return;
 
-        // Nicely print history
-        // TODO: should really keep formatted values in memory
-        boolean first = true;
-        StringBuilder builderX = new StringBuilder();
-        StringBuilder builderY = new StringBuilder();
-        StringBuilder builderZ = new StringBuilder();
-        for (float[] raw : mRawHistory) {
-            if (first) {
-                first = false;
-            }
-            else {
-                builderX.append("\n");
-                builderY.append("\n");
-                builderZ.append("\n");
-            }
-            builderX.append(String.format(Locale.getDefault(), "%.8f", raw[0]));
-            builderY.append(String.format(Locale.getDefault(), "%.8f", raw[1]));
-            builderZ.append(String.format(Locale.getDefault(), "%.8f", raw[2]));
-        }
-
-        // Assign formatted history values to text boxes
-        ((TextView) view.findViewById(R.id.original_x)).setText(builderX.toString());
-        ((TextView) view.findViewById(R.id.original_y)).setText(builderY.toString());
-        ((TextView) view.findViewById(R.id.original_z)).setText(builderZ.toString());
-
-        // Test
-        //switcherX.setText(builderX.toString());
-        //switcherX.setText(String.format(Locale.getDefault(), "%.10f", latestRaw[0]));
-        tvContent.setText(tvContent.getText() + "\n" + String.format(Locale.getDefault(), "%.10f", latestRaw[0]));
-        tvContent.scroll();
+        // Update running history
+        updateValueList(historyViewX, latestRaw[0]);
+        updateValueList(historyViewY, latestRaw[1]);
+        updateValueList(historyViewZ, latestRaw[2]);
 
         // Update charts
-        updateValuesGraph(Util.limit(latestRaw[0], -1.0f, 1.0f), chartX);
-        updateValuesGraph(Util.limit(latestRaw[1], -1.0f, 1.0f), chartY);
-        updateValuesGraph(Util.limit(latestRaw[2], -1.0f, 1.0f), chartZ);
+        updateValueGraph(chartX, Util.limit(latestRaw[0], -1.0f, 1.0f));
+        updateValueGraph(chartY, Util.limit(latestRaw[1], -1.0f, 1.0f));
+        updateValueGraph(chartZ, Util.limit(latestRaw[2], -1.0f, 1.0f));
     }
 
-    private void updateValuesGraph(float newValue, LineChart chart) {
+    private void updateValueList(VerticalScrollingTextView view, float newValue) {
+        StringBuilder builder = new StringBuilder(view.getText());
+        if (builder.length() > 0) builder.append("\n");
+        builder.append(String.format(Locale.getDefault(), "%.10f", newValue));
+        view.setText(builder.toString());
+        view.scroll();
+    }
+
+    private void updateValueGraph(LineChart chart, float newValue) {
         LineData data = chart.getData();
         if (data == null) return;
         ILineDataSet set = data.getDataSetByIndex(0);

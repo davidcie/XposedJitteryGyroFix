@@ -36,7 +36,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:columnCount="3"
-                    android:rowCount="4">
+                    android:rowCount="3">
 
                     <TextView
                         android:layout_width="0dp"
@@ -68,35 +68,32 @@
                         android:paddingVertical="8dp"
                         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-                    <TextView
+                    <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
                         android:id="@+id/original_x"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:minLines="3"
-                        android:gravity="end"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
-                        android:text="@string/status_waiting" />
+                        android:gravity="end"
+                        android:lines="3"/>
 
-                    <TextView
+                    <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
                         android:id="@+id/original_y"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:minLines="3"
-                        android:gravity="end"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
-                        android:text="@string/status_waiting" />
+                        android:gravity="end"
+                        android:lines="3"/>
 
-                    <TextView
+                    <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
                         android:id="@+id/original_z"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:minLines="3"
-                        android:gravity="end"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
-                        android:text="@string/status_waiting" />
+                        android:gravity="end"
+                        android:lines="3"/>
 
                     <com.github.mikephil.charting.charts.LineChart
                         android:id="@+id/chart_x"
@@ -119,14 +116,6 @@
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"/>
 
-                    <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
-                        android:id="@+id/tvContent"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_columnWeight="1"
-                        android:layout_gravity="fill_horizontal"
-                        android:gravity="end"
-                        android:lines="3"/>
                 </GridLayout>
             </LinearLayout>
 

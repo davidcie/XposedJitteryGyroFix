@@ -64,6 +64,15 @@ public class VerticalScrollingTextView extends TextView {
         return 0.0f;
     }
 
+    /**
+     * Prevents a small visual glitch whereby at the very beginning when there are
+     * few values and top fading edge would be drawn only after the first one crosses the edge.
+     */
+    @Override
+    protected float getTopFadingEdgeStrength() {
+        return 1.0f;
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
