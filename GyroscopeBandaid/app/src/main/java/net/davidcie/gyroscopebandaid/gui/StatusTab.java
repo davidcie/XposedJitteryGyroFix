@@ -6,7 +6,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,17 +21,10 @@ import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridLayout;
-
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
@@ -38,7 +36,12 @@ import java.util.Locale;
 public class StatusTab extends Fragment {
 
     private final static int UPDATE_EVERY_MS = 250;
-    private final static int CHART_VALUES = 15;
+
+    private TextureView mTextureView;
+    private RenderThread mThread;
+    private int mWidth;
+    private int mHeight;
+
 
     private boolean mIsVisible = false;
     private Handler mUpdaterThread = new Handler();
@@ -55,9 +58,6 @@ public class StatusTab extends Fragment {
     };
 
     // Charts
-    LineChart chartX;
-    LineChart chartY;
-    LineChart chartZ;
     VerticalScrollingTextView historyViewX;
     VerticalScrollingTextView historyViewY;
     VerticalScrollingTextView historyViewZ;
@@ -151,12 +151,9 @@ public class StatusTab extends Fragment {
         gridRaw.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
         gridRaw.setRowOrderPreserved(false);
 
-        chartX = view.findViewById(R.id.chart_x);
-        chartY = view.findViewById(R.id.chart_y);
-        chartZ = view.findViewById(R.id.chart_z);
-        setupChart(chartX);
-        setupChart(chartY);
-        setupChart(chartZ);
+        mTextureView = view.findViewById(R.id.myTexture);
+        mTextureView.setSurfaceTextureListener(new CanvasListener());
+        mTextureView.setOpaque(false);
 
         historyViewX = view.findViewById(R.id.original_x);
         historyViewX.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
@@ -213,73 +210,169 @@ public class StatusTab extends Fragment {
 
     //endregion
 
-    private void setupChart(LineChart chart) {
-        chart.getDescription().setEnabled(false);
-        chart.setTouchEnabled(false);
-        chart.setPinchZoom(false);
-        chart.setAutoScaleMinMaxEnabled(false);
-        chart.setScaleEnabled(true);
-        chart.setDrawGridBackground(false);
-        chart.setViewPortOffsets(0f, 0f, 0f, 0f);
-        chart.getAxisRight().setEnabled(false);
-        chart.getLegend().setEnabled(false);
-
-        YAxis y = chart.getAxisLeft();
-        y.setAxisMinimum(-1.1f);
-        y.setAxisMaximum(1.1f);
-        y.setDrawLabels(false);
-        y.setDrawGridLines(false);
-        y.setDrawAxisLine(false);
-
-        XAxis x = chart.getXAxis();
-        x.setDrawLabels(false);
-        x.setDrawGridLines(false);
-        x.setDrawAxisLine(false);
-
-        LineDataSet dataSet = new LineDataSet(null, null);
-        dataSet.setDrawValues(false);
-        dataSet.setLineWidth(2f);
-        dataSet.setDrawCircles(false);
-        //dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        //dataSet.setCubicIntensity(0.2f);
-        for (int e = 0; e < CHART_VALUES; e++) dataSet.addEntry(new Entry(e, 0.0f));
-
-        LineData data = new LineData();
-        data.addDataSet(dataSet);
-        chart.setData(data);
-    }
-
     @SuppressLint("SetTextI18n")
     private void updateValues(float[] latestRaw, float[] latestCooked) {
         // Update running history
         updateValueList(historyViewX, latestRaw[0]);
         updateValueList(historyViewY, latestRaw[1]);
         updateValueList(historyViewZ, latestRaw[2]);
-
-        // Update charts
-        updateValueGraph(chartX, Util.limit(latestRaw[0], -1.0f, 1.0f));
-        updateValueGraph(chartY, Util.limit(latestRaw[1], -1.0f, 1.0f));
-        updateValueGraph(chartZ, Util.limit(latestRaw[2], -1.0f, 1.0f));
     }
 
     private void updateValueList(VerticalScrollingTextView view, float newValue) {
         StringBuilder builder = new StringBuilder(view.getText());
         if (builder.length() > 0) builder.append("\n");
         builder.append(String.format(Locale.getDefault(), "%.10f", newValue));
-        view.setText(builder.toString());
-        view.scroll();
+        //view.setText(builder.toString());
+        //view.scroll();
     }
 
-    private void updateValueGraph(LineChart chart, float newValue) {
-        LineData data = chart.getData();
-        if (data == null) return;
-        ILineDataSet set = data.getDataSetByIndex(0);
-        set.addEntry(new Entry(set.getEntryCount(), newValue));
-        //data.addEntry(new Entry(set.getEntryCount(), newValue), 0);
-        data.notifyDataChanged();
-        chart.notifyDataSetChanged();
-        chart.setVisibleXRangeMaximum(CHART_VALUES);
-        //chart.moveViewToX(data.getEntryCount());
-        chart.moveViewToAnimated(data.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, 20);
+
+    private class RenderThread extends Thread {
+        private static final long FPS = (long) (1f / 60f * 1000f);
+        private volatile boolean mRunning = true;
+        private int sx, sy, ex, ey;
+        private boolean sxToRight, syToBottom;
+        private boolean exToRight, eyToBottom;
+
+        private static final int RANGE_X = 20; // 0..20
+        private static final int RANGE_Y = 2;  // -1..1
+
+        private float scaleX = (float)mWidth / RANGE_X;
+        private float scaleY = (float)mHeight / RANGE_Y;
+        private float[] values = new float[20];
+
+        @Override
+        public void run() {
+            Paint paint = new Paint();
+            paint.setColor(0xff00ff00);
+            paint.setColor(Color.RED);
+
+            // Initialize graph
+            for (int v = 0; v < values.length; v++) {
+                values[v] = (float) (Math.random() * 2 - 1);
+            }
+
+            sx = (int) (Math.random() * mWidth);
+            sy = (int) (Math.random() * mHeight);
+            ex = (int) (Math.random() * mWidth);
+            ey = (int) (Math.random() * mHeight);
+
+            while (mRunning && !Thread.interrupted()) {
+                final Canvas canvas = mTextureView.lockCanvas(null);
+                try {
+                    canvas.drawColor(0x00000000, PorterDuff.Mode.CLEAR);
+
+
+                    int strokeWidth = 5;
+                    paint.setStrokeWidth(strokeWidth);
+                    paint.setStyle(Paint.Style.STROKE);
+
+                    Path path = new Path();
+                    path.moveTo(sx, sy);
+                    path.lineTo(ex, ey);
+
+                    canvas.drawPath(path, paint);
+
+                } finally {
+                    mTextureView.unlockCanvasAndPost(canvas);
+                }
+
+                if (sxToRight) {
+                    sx += 3;
+                    if (sx >= mWidth) {
+                        sxToRight = false;
+                    }
+                } else {
+                    sx -= 3;
+                    if (sx < 0) {
+                        sxToRight = true;
+                    }
+                }
+
+                if (syToBottom) {
+                    sy += 3;
+                    if (sy >= mHeight) {
+                        syToBottom = false;
+                    }
+                } else {
+                    sy -= 3;
+                    if (sy < 0) {
+                        syToBottom = true;
+                    }
+                }
+
+                if (exToRight) {
+                    ex += 3;
+                    if (ex >= mWidth) {
+                        exToRight = false;
+                    }
+                } else {
+                    ex -= 3;
+                    if (ex < 0) {
+                        exToRight = true;
+                    }
+                }
+
+                if (eyToBottom) {
+                    ey++;
+                    if (ey >= mHeight) {
+                        eyToBottom = false;
+                    }
+                } else {
+                    ey--;
+                    if (ey < 0) {
+                        eyToBottom = true;
+                    }
+                }
+
+                try {
+                    Thread.sleep(FPS);
+                } catch (InterruptedException e) {
+                    // Interrupted
+                }
+            }
+        }
+
+        public void stopRendering() {
+            interrupt();
+            mRunning = false;
+        }
+
+    }
+
+
+    private class CanvasListener implements TextureView.SurfaceTextureListener {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface,
+                                              int width, int height) {
+            Log.d(Util.LOG_TAG, "onSurfaceTextureAvailable");
+            mThread = new RenderThread();
+            mThread.start();
+            mWidth = mTextureView.getWidth();
+            mHeight = mTextureView.getHeight();
+            Log.d(Util.LOG_TAG, "width: " + mWidth + " height: " + height);
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            Log.d(Util.LOG_TAG, "onSurfaceTextureDestroyed");
+            if (mThread != null) {
+                mThread.stopRendering();
+            }
+            return true;
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface,
+                                                int width, int height) {
+            Log.d(Util.LOG_TAG, "onSurfaceTextureSizeChanged");
+            mWidth = mTextureView.getWidth();
+            mHeight = mTextureView.getHeight();
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+            //Log.d(Util.LOG_TAG, "onSurfaceTextureUpdated");
+        }
     }
 }

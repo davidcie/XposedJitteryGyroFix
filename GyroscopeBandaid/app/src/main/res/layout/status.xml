@@ -70,7 +70,7 @@
                     <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
                         android:id="@+id/original_x"
                         android:layout_width="0dp"
-                        android:layout_height="171dp"
+                        android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
                         android:gravity="end"
@@ -80,7 +80,7 @@
                     <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
                         android:id="@+id/original_y"
                         android:layout_width="0dp"
-                        android:layout_height="171dp"
+                        android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
                         android:gravity="end"
@@ -89,29 +89,14 @@
                     <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
                         android:id="@+id/original_z"
                         android:layout_width="0dp"
-                        android:layout_height="171dp"
+                        android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
                         android:gravity="end"
                         android:lines="3"/>
 
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/chart_x"
-                        android:layout_width="0dp"
-                        android:layout_height="100dp"
-                        android:layout_columnWeight="1"
-                        android:layout_gravity="fill_horizontal"
-                        android:background="@color/cardview_dark_background"/>
-
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/chart_y"
-                        android:layout_width="0dp"
-                        android:layout_height="100dp"
-                        android:layout_columnWeight="1"
-                        android:layout_gravity="fill_horizontal"/>
-
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/chart_z"
+                    <TextureView
+                        android:id="@+id/myTexture"
                         android:layout_width="0dp"
                         android:layout_height="100dp"
                         android:layout_columnWeight="1"
