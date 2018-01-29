@@ -22,20 +22,32 @@ import net.davidcie.gyroscopebandaid.Util;
 
 public class GyroService extends Service {
 
-    // Available commands
+    //region Supported messages
+
     public static final int REGISTER_CLIENT = 1;
     public static final int UNREGISTER_CLIENT = 2;
+    public static final int BROADCAST_ENABLE = 3;
+    public static final int BROADCAST_DISABLE = 4;
     public static final int PAUSE = 10;
     public static final int PLAY = 11;
-    public static final int NEW_READING = 12;
-    public static final String KEY_ORIGINAL_VALUES = "original";
-    public static final String KEY_PROCESSED_VALUES = "processed";
+    public static final int SEND_READING = 12;
+    public static final int REQUEST_READING = 13;
+    public static final String KEY_RAW_VALUES = "original";
+    public static final String KEY_COOKED_VALUES = "processed";
+
+    //endregion
 
     // Endpoint for clients to send messages to GyroService
     final Messenger mServiceMessenger = new Messenger(new IncomingHandler());
 
     // Endpoint for talking to the client
     Messenger mClientMessenger = null;
+
+    // Flag if we should immediately update client when a new reading arrives
+    boolean mBroadcast = false;
+
+    final float[] mLastRawValue = new float[3];
+    final float[] mLastCookedValue = new float[3];
 
     // Sensor management
     private Engine mEngine;
@@ -55,10 +67,10 @@ public class GyroService extends Service {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
                 Log.v(Util.LOG_TAG, "GyroService: Received SensorEvent " + Util.printArray(sensorEvent.values));
-                float[] originalValues = new float[3];
-                System.arraycopy(sensorEvent.values, 0, originalValues, 0, 3);
+                System.arraycopy(sensorEvent.values, 0, mLastRawValue, 0, 3);
                 mEngine.newReading(sensorEvent.values);
-                notifyClient(originalValues, sensorEvent.values);
+                System.arraycopy(sensorEvent.values, 0, mLastCookedValue, 0, 3);
+                if (mBroadcast) notifyClient();
             }
 
             @Override
@@ -67,16 +79,16 @@ public class GyroService extends Service {
         };
     }
 
-    private void notifyClient(float[] original, float[] processed) {
+    private void notifyClient() {
         try {
             Bundle values = new Bundle();
-            values.putFloatArray(KEY_ORIGINAL_VALUES, original);
-            values.putFloatArray(KEY_PROCESSED_VALUES, processed);
-            Message message = Message.obtain(null, GyroService.NEW_READING);
+            values.putFloatArray(KEY_RAW_VALUES, mLastRawValue);
+            values.putFloatArray(KEY_COOKED_VALUES, mLastCookedValue);
+            Message message = Message.obtain(null, GyroService.SEND_READING);
             message.setData(values);
             mClientMessenger.send(message);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+        } catch (RemoteException ignored) {
+            // Client crashed or is not listening, no big deal!
         }
     }
 
@@ -129,6 +141,18 @@ public class GyroService extends Service {
                 case GyroService.PAUSE:
                     Log.d(Util.LOG_TAG, "GyroService: Received PAUSE");
                     pause();
+                    break;
+                case GyroService.BROADCAST_ENABLE:
+                    Log.d(Util.LOG_TAG, "GyroService: Received BROADCAST_ENABLE");
+                    mBroadcast = true;
+                    break;
+                case GyroService.BROADCAST_DISABLE:
+                    Log.d(Util.LOG_TAG, "GyroService: Received BROADCAST_DISABLE");
+                    mBroadcast = false;
+                    break;
+                case GyroService.REQUEST_READING:
+                    Log.d(Util.LOG_TAG, "GyroService: Received REQUEST_READING");
+                    notifyClient();
                     break;
                 default:
                     super.handleMessage(msg);

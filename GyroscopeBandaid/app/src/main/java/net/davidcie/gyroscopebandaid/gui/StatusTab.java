@@ -37,21 +37,45 @@ import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
+    private final static int UPDATE_EVERY_MS = 100;
     private boolean isVisible = false;
     private CircularFifoQueue<float[]> rawHistory = new CircularFifoQueue<>(3);
-    private CircularFifoQueue<float[]> processedHistory = new CircularFifoQueue<>(3);
+    private CircularFifoQueue<float[]> cookedHistory = new CircularFifoQueue<>(3);
+    private Handler mUiUpdater = new Handler();
+    private Runnable mRequestReading = new Runnable() {
+        @Override
+        public void run() {
+            if (mServiceBound) {
+                Message message = Message.obtain(null, GyroService.REQUEST_READING);
+                try { mServiceMessenger.send(message); }
+                catch (RemoteException ignored) { }
+            }
+            mUiUpdater.postDelayed(this, UPDATE_EVERY_MS);
+        }
+    };
 
-    // Endpoint for services to send messages to StatusTab
-    final Messenger mClientMessenger = new Messenger(new IncomingHandler());
-
-    // Messanger for sending messages to gyroscope service over a connection
-    Messenger mServiceMessenger = null;
-    boolean mServiceBound = false;
 
     // Charts
     LineChart chartX;
     LineChart chartY;
     LineChart chartZ;
+
+    //region Service interaction
+
+    /**
+     * Endpoint for services to send messages to this Fragment.
+     */
+    final Messenger mClientMessenger = new Messenger(new IncomingHandler());
+
+    /**
+     * Messanger for sending messages to service over a connection.
+     */
+    Messenger mServiceMessenger = null;
+
+    /**
+     * Lets us know if we are tied to the service.
+     */
+    boolean mServiceBound = false;
 
     /**
      * Class for interacting with the main interface of the service.
@@ -67,7 +91,7 @@ public class StatusTab extends Fragment {
                 message.replyTo = mClientMessenger;
                 mServiceMessenger.send(message);
                 setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
-            } catch (RemoteException e) {
+            } catch (RemoteException ignored) {
                 // Service crashed before we managed to connect?
             }
         }
@@ -79,27 +103,47 @@ public class StatusTab extends Fragment {
         }
     };
 
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        Log.v(Util.LOG_TAG, "StatusTab: setUserVisibleHint(" + isVisibleToUser + ") ");
-        super.setUserVisibleHint(isVisibleToUser);
-        isVisible = isVisibleToUser;
-        setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
+    /**
+     * Handler for incoming messages from the service.
+     */
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case GyroService.SEND_READING:
+                    Bundle data = msg.getData();
+                    float[] raw = data.getFloatArray(GyroService.KEY_RAW_VALUES);
+                    float[] cooked = data.getFloatArray(GyroService.KEY_COOKED_VALUES);
+                    rawHistory.add(raw);
+                    cookedHistory.add(cooked);
+                    updateValues(raw, cooked);
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
     }
 
     private void setServicePlayback(int playOrPause) {
         if (mServiceBound) {
             Message message = Message.obtain(null, playOrPause);
-            try {
-                mServiceMessenger.send(message);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+            try { mServiceMessenger.send(message); }
+            catch (RemoteException ignored) { }
         }
     }
 
+    //endregion
+
+
+    //region Fragment overrides
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        Intent wantService = new Intent(getActivity(), GyroService.class);
+        getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
+
         /*gridLayout = (GridLayout) findViewById(R.id.gridlayout_main);
         gridLayout.setUseDefaultMargins(false);
         gridLayout.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
@@ -114,6 +158,49 @@ public class StatusTab extends Fragment {
         setupChart(chartZ);
         return view;
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (isVisible) setServicePlayback(GyroService.PLAY);
+        mUiUpdater.post(mRequestReading);
+    }
+
+    @Override
+    public void onPause() {
+        mUiUpdater.removeCallbacks(mRequestReading);
+        setServicePlayback(GyroService.PAUSE);
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mServiceBound) {
+            if (mServiceMessenger != null) {
+                Message message = Message.obtain(null, GyroService.UNREGISTER_CLIENT);
+                message.replyTo = mClientMessenger;
+                try {
+                    mServiceMessenger.send(message);
+                } catch (RemoteException e) {
+                    // Nothing we need to do, service crashed on its own?
+                }
+            }
+            getActivity().unbindService(mServiceConnection);
+            mServiceBound = false;
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        Log.v(Util.LOG_TAG, "StatusTab: setUserVisibleHint(" + isVisibleToUser + ")");
+        isVisible = isVisibleToUser;
+        setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
+    }
+
+
+    //endregion
 
     private void setupChart(LineChart chart) {
         chart.getDescription().setEnabled(false);
@@ -152,56 +239,7 @@ public class StatusTab extends Fragment {
         chart.setData(data);
     }
 
-    @Override
-    public void onStart() {
-        Log.d(Util.LOG_TAG, "StatusTab: onStart");
-        super.onStart();
-        Log.d(Util.LOG_TAG, "StatusTab: Trying to bind to service");
-        Intent wantService = new Intent(getActivity(), GyroService.class);
-        getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    public void onStop() {
-        Log.d(Util.LOG_TAG, "StatusTab: onStop");
-        super.onStop();
-    }
-
-    @Override
-    public void onPause() {
-        Log.d(Util.LOG_TAG, "StatusTab: onPause");
-        super.onPause();
-        setServicePlayback(GyroService.PAUSE);
-    }
-
-    @Override
-    public void onResume() {
-        Log.d(Util.LOG_TAG, "StatusTab: onResume");
-        super.onResume();
-        if (isVisible) setServicePlayback(GyroService.PLAY);
-    }
-
-    @Override
-    public void onDestroy() {
-        Log.d(Util.LOG_TAG, "StatusTab: onDestroy");
-        Log.d(Util.LOG_TAG, "StatusTab: Unbinding from service");
-        if (mServiceBound) {
-            if (mServiceMessenger != null) {
-                Message message = Message.obtain(null, GyroService.UNREGISTER_CLIENT);
-                message.replyTo = mClientMessenger;
-                try {
-                    mServiceMessenger.send(message);
-                } catch (RemoteException e) {
-                    // Nothing we need to do, service crashed on its own.
-                }
-            }
-            getActivity().unbindService(mServiceConnection);
-            mServiceBound = false;
-        }
-        super.onDestroy();
-    }
-
-    private void updateValues(float[] newOriginal, float[] newProcessed) {
+    private void updateValues(float[] latestRaw, float[] latestCooked) {
         View view = getView();
         if (view == null) return;
 
@@ -231,38 +269,18 @@ public class StatusTab extends Fragment {
         ((TextView) view.findViewById(R.id.original_z)).setText(builderZ.toString());
 
         // Update charts
-        float newValueX = Util.limit(newOriginal[0], -1.0f, 1.0f);
-        float newValueY = Util.limit(newOriginal[1], -1.0f, 1.0f);
-        float newValueZ = Util.limit(newOriginal[2], -1.0f, 1.0f);
-        LineData dataX = chartX.getData();
-        if (dataX != null) {
-            ILineDataSet setX = dataX.getDataSetByIndex(0);
-            //noinspection SuspiciousNameCombination
-            dataX.addEntry(new Entry(setX.getEntryCount(), newValueX), 0);
-            dataX.notifyDataChanged();
-            chartX.notifyDataSetChanged();
-            chartX.moveViewToAnimated(dataX.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, 50);
-        }
+        updateValuesGraph(Util.limit(latestRaw[0], -1.0f, 1.0f), chartX);
+        updateValuesGraph(Util.limit(latestRaw[1], -1.0f, 1.0f), chartY);
+        updateValuesGraph(Util.limit(latestRaw[2], -1.0f, 1.0f), chartZ);
     }
 
-    /**
-     * Handler for incoming messages from the service.
-     */
-    class IncomingHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case GyroService.NEW_READING:
-                    Bundle data = msg.getData();
-                    float[] newOriginal = data.getFloatArray(GyroService.KEY_ORIGINAL_VALUES);
-                    float[] newProcessed = data.getFloatArray(GyroService.KEY_PROCESSED_VALUES);
-                    rawHistory.add(newOriginal);
-                    processedHistory.add(newProcessed);
-                    updateValues(newOriginal, newProcessed);
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
-        }
+    private void updateValuesGraph(float newValue, LineChart chart) {
+        LineData data = chart.getData();
+        if (data == null) return;
+        ILineDataSet set = data.getDataSetByIndex(0);
+        data.addEntry(new Entry(set.getEntryCount(), newValue), 0);
+        data.notifyDataChanged();
+        chart.notifyDataSetChanged();
+        chart.moveViewToAnimated(data.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, UPDATE_EVERY_MS);
     }
 }
