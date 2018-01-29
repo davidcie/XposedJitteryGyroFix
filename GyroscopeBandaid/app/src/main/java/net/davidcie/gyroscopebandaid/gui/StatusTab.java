@@ -37,7 +37,9 @@ import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
-    private final static int UPDATE_EVERY_MS = 500;
+    private final static int UPDATE_EVERY_MS = 250;
+    private final static int CHART_VALUES = 15;
+
     private boolean mIsVisible = false;
     private Handler mUpdaterThread = new Handler();
     private Runnable mRequestReadingTask = new Runnable() {
@@ -203,6 +205,8 @@ public class StatusTab extends Fragment {
         super.setUserVisibleHint(isVisibleToUser);
         Log.v(Util.LOG_TAG, "StatusTab: setUserVisibleHint(" + isVisibleToUser + ")");
         mIsVisible = isVisibleToUser;
+        if (mIsVisible) mUpdaterThread.post(mRequestReadingTask);
+        else mUpdaterThread.removeCallbacks(mRequestReadingTask);
         setServicePlayback(mIsVisible ? GyroService.PLAY : GyroService.PAUSE);
     }
 
@@ -216,7 +220,7 @@ public class StatusTab extends Fragment {
         chart.setAutoScaleMinMaxEnabled(false);
         chart.setScaleEnabled(true);
         chart.setDrawGridBackground(false);
-        chart.setBackgroundColor(Color.WHITE);
+        chart.setViewPortOffsets(0f, 0f, 0f, 0f);
         chart.getAxisRight().setEnabled(false);
         chart.getLegend().setEnabled(false);
 
@@ -236,12 +240,12 @@ public class StatusTab extends Fragment {
         dataSet.setDrawValues(false);
         dataSet.setLineWidth(2f);
         dataSet.setDrawCircles(false);
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        dataSet.setCubicIntensity(0.2f);
+        //dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        //dataSet.setCubicIntensity(0.2f);
+        for (int e = 0; e < CHART_VALUES; e++) dataSet.addEntry(new Entry(e, 0.0f));
 
         LineData data = new LineData();
         data.addDataSet(dataSet);
-        data.addEntry(new Entry(0, 0), 0);
         chart.setData(data);
     }
 
@@ -270,9 +274,12 @@ public class StatusTab extends Fragment {
         LineData data = chart.getData();
         if (data == null) return;
         ILineDataSet set = data.getDataSetByIndex(0);
-        data.addEntry(new Entry(set.getEntryCount(), newValue), 0);
+        set.addEntry(new Entry(set.getEntryCount(), newValue));
+        //data.addEntry(new Entry(set.getEntryCount(), newValue), 0);
+        data.notifyDataChanged();
         chart.notifyDataSetChanged();
-        chart.moveViewToAnimated(data.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, UPDATE_EVERY_MS);
-        chart.setVisibleXRangeMaximum(15);
+        chart.setVisibleXRangeMaximum(CHART_VALUES);
+        //chart.moveViewToX(data.getEntryCount());
+        chart.moveViewToAnimated(data.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, 20);
     }
 }

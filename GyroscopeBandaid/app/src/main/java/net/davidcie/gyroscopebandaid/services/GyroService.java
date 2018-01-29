@@ -155,7 +155,7 @@ public class GyroService extends Service {
                     mBroadcast = false;
                     break;
                 case GyroService.REQUEST_READING:
-                    Log.d(Util.LOG_TAG, "GyroService: Received REQUEST_READING");
+                    //Log.d(Util.LOG_TAG, "GyroService: Received REQUEST_READING");
                     notifyClient();
                     break;
                 default:
