@@ -82,8 +82,12 @@ public class GyroService extends Service {
     private void notifyClient() {
         try {
             Bundle values = new Bundle();
-            values.putFloatArray(KEY_RAW_VALUES, mLastRawValue);
-            values.putFloatArray(KEY_COOKED_VALUES, mLastCookedValue);
+            float[] lastRawCopy = new float[mLastRawValue.length];
+            float[] lastCookedCopy = new float[mLastCookedValue.length];
+            System.arraycopy(mLastRawValue, 0, lastRawCopy, 0, mLastRawValue.length);
+            System.arraycopy(mLastCookedValue, 0, lastCookedCopy, 0, mLastCookedValue.length);
+            values.putFloatArray(KEY_RAW_VALUES, lastRawCopy);
+            values.putFloatArray(KEY_COOKED_VALUES, lastCookedCopy);
             Message message = Message.obtain(null, GyroService.SEND_READING);
             message.setData(values);
             mClientMessenger.send(message);
