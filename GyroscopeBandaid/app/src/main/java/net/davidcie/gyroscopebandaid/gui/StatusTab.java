@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -29,6 +30,7 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
+import net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -37,7 +39,7 @@ import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
-    private final static int UPDATE_EVERY_MS = 100;
+    private final static int UPDATE_EVERY_MS = 2000;
     private boolean mIsVisible = false;
     private CircularFifoQueue<float[]> mRawHistory = new CircularFifoQueue<>(3);
     private CircularFifoQueue<float[]> mCookedHistory = new CircularFifoQueue<>(3);
@@ -58,6 +60,8 @@ public class StatusTab extends Fragment {
     LineChart chartX;
     LineChart chartY;
     LineChart chartZ;
+    TextSwitcher switcherX;
+    VerticalScrollingTextView tvContent;
 
     //region Service interaction
 
@@ -154,6 +158,24 @@ public class StatusTab extends Fragment {
         setupChart(chartX);
         setupChart(chartY);
         setupChart(chartZ);
+
+        tvContent = view.findViewById(R.id.tvContent);
+        tvContent.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS / 2);
+
+        /*switcherX = view.findViewById(R.id.switcher_x);
+        switcherX.setFactory(new ViewSwitcher.ViewFactory() {
+            @Override
+            public View makeView() {
+                TextView text = new TextView(getActivity());
+                text.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+                return text;
+            }
+        });
+
+        Animation animationOut = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_out_top);
+        Animation animationIn = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_bottom);
+        switcherX.setOutAnimation(animationOut);
+        switcherX.setInAnimation(animationIn);*/
 
         return view;
     }
@@ -257,15 +279,21 @@ public class StatusTab extends Fragment {
                 builderY.append("\n");
                 builderZ.append("\n");
             }
-            builderX.append(String.format(Locale.getDefault(), "%.10f", raw[0]));
-            builderY.append(String.format(Locale.getDefault(), "%.10f", raw[1]));
-            builderZ.append(String.format(Locale.getDefault(), "%.10f", raw[2]));
+            builderX.append(String.format(Locale.getDefault(), "%.8f", raw[0]));
+            builderY.append(String.format(Locale.getDefault(), "%.8f", raw[1]));
+            builderZ.append(String.format(Locale.getDefault(), "%.8f", raw[2]));
         }
 
         // Assign formatted history values to text boxes
         ((TextView) view.findViewById(R.id.original_x)).setText(builderX.toString());
         ((TextView) view.findViewById(R.id.original_y)).setText(builderY.toString());
         ((TextView) view.findViewById(R.id.original_z)).setText(builderZ.toString());
+
+        // Test
+        //switcherX.setText(builderX.toString());
+        //switcherX.setText(String.format(Locale.getDefault(), "%.10f", latestRaw[0]));
+        tvContent.setText(tvContent.getText() + "\n" + String.format(Locale.getDefault(), "%.10f", latestRaw[0]));
+        tvContent.scroll();
 
         // Update charts
         updateValuesGraph(Util.limit(latestRaw[0], -1.0f, 1.0f), chartX);

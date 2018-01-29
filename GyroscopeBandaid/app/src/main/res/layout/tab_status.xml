@@ -73,6 +73,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:minLines="3"
+                        android:gravity="end"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
                         android:text="@string/status_waiting" />
@@ -82,6 +83,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:minLines="3"
+                        android:gravity="end"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
                         android:text="@string/status_waiting" />
@@ -91,6 +93,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:minLines="3"
+                        android:gravity="end"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"
                         android:text="@string/status_waiting" />
@@ -115,6 +118,19 @@
                         android:layout_height="100dp"
                         android:layout_columnWeight="1"
                         android:layout_gravity="fill_horizontal"/>
+
+                    <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
+                        android:id="@+id/tvContent"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_gravity="fill_horizontal"
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:minLines="3"
+                        android:maxLines="3"
+                        android:scrollHorizontally="false"
+                        android:scrollbars="vertical"/>
                 </GridLayout>
             </LinearLayout>
 
