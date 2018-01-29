@@ -38,11 +38,11 @@ import java.util.Locale;
 public class StatusTab extends Fragment {
 
     private final static int UPDATE_EVERY_MS = 100;
-    private boolean isVisible = false;
-    private CircularFifoQueue<float[]> rawHistory = new CircularFifoQueue<>(3);
-    private CircularFifoQueue<float[]> cookedHistory = new CircularFifoQueue<>(3);
-    private Handler mUiUpdater = new Handler();
-    private Runnable mRequestReading = new Runnable() {
+    private boolean mIsVisible = false;
+    private CircularFifoQueue<float[]> mRawHistory = new CircularFifoQueue<>(3);
+    private CircularFifoQueue<float[]> mCookedHistory = new CircularFifoQueue<>(3);
+    private Handler mUpdaterThread = new Handler();
+    private Runnable mRequestReadingTask = new Runnable() {
         @Override
         public void run() {
             if (mServiceBound) {
@@ -50,10 +50,9 @@ public class StatusTab extends Fragment {
                 try { mServiceMessenger.send(message); }
                 catch (RemoteException ignored) { }
             }
-            mUiUpdater.postDelayed(this, UPDATE_EVERY_MS);
+            mUpdaterThread.postDelayed(this, UPDATE_EVERY_MS);
         }
     };
-
 
     // Charts
     LineChart chartX;
@@ -90,7 +89,7 @@ public class StatusTab extends Fragment {
                 Message message = Message.obtain(null, GyroService.REGISTER_CLIENT);
                 message.replyTo = mClientMessenger;
                 mServiceMessenger.send(message);
-                setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
+                setServicePlayback(mIsVisible ? GyroService.PLAY : GyroService.PAUSE);
             } catch (RemoteException ignored) {
                 // Service crashed before we managed to connect?
             }
@@ -114,8 +113,8 @@ public class StatusTab extends Fragment {
                     Bundle data = msg.getData();
                     float[] raw = data.getFloatArray(GyroService.KEY_RAW_VALUES);
                     float[] cooked = data.getFloatArray(GyroService.KEY_COOKED_VALUES);
-                    rawHistory.add(raw);
-                    cookedHistory.add(cooked);
+                    mRawHistory.add(raw);
+                    mCookedHistory.add(cooked);
                     updateValues(raw, cooked);
                     break;
                 default:
@@ -152,23 +151,23 @@ public class StatusTab extends Fragment {
         chartX = view.findViewById(R.id.chart_x);
         chartY = view.findViewById(R.id.chart_y);
         chartZ = view.findViewById(R.id.chart_z);
-
         setupChart(chartX);
         setupChart(chartY);
         setupChart(chartZ);
+
         return view;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (isVisible) setServicePlayback(GyroService.PLAY);
-        mUiUpdater.post(mRequestReading);
+        if (mIsVisible) setServicePlayback(GyroService.PLAY);
+        mUpdaterThread.post(mRequestReadingTask);
     }
 
     @Override
     public void onPause() {
-        mUiUpdater.removeCallbacks(mRequestReading);
+        mUpdaterThread.removeCallbacks(mRequestReadingTask);
         setServicePlayback(GyroService.PAUSE);
         super.onPause();
     }
@@ -195,8 +194,8 @@ public class StatusTab extends Fragment {
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         Log.v(Util.LOG_TAG, "StatusTab: setUserVisibleHint(" + isVisibleToUser + ")");
-        isVisible = isVisibleToUser;
-        setServicePlayback(isVisible ? GyroService.PLAY : GyroService.PAUSE);
+        mIsVisible = isVisibleToUser;
+        setServicePlayback(mIsVisible ? GyroService.PLAY : GyroService.PAUSE);
     }
 
 
@@ -212,7 +211,7 @@ public class StatusTab extends Fragment {
         chart.setBackgroundColor(Color.WHITE);
         chart.getAxisRight().setEnabled(false);
         chart.getLegend().setEnabled(false);
-        chart.setVisibleXRangeMaximum(15);
+        chart.setVisibleXRangeMaximum(5);
 
         YAxis y = chart.getAxisLeft();
         y.setAxisMinimum(-1.1f);
@@ -249,7 +248,7 @@ public class StatusTab extends Fragment {
         StringBuilder builderX = new StringBuilder();
         StringBuilder builderY = new StringBuilder();
         StringBuilder builderZ = new StringBuilder();
-        for (float[] raw : rawHistory) {
+        for (float[] raw : mRawHistory) {
             if (first) {
                 first = false;
             }
@@ -279,8 +278,8 @@ public class StatusTab extends Fragment {
         if (data == null) return;
         ILineDataSet set = data.getDataSetByIndex(0);
         data.addEntry(new Entry(set.getEntryCount(), newValue), 0);
-        data.notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.moveViewToAnimated(data.getEntryCount(), 0.0f, YAxis.AxisDependency.LEFT, UPDATE_EVERY_MS);
+        chart.setVisibleXRangeMaximum(15);
     }
 }
