@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.GridLayout;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -36,7 +37,7 @@ import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
-    private final static int UPDATE_EVERY_MS = 2000;
+    private final static int UPDATE_EVERY_MS = 500;
     private boolean mIsVisible = false;
     private Handler mUpdaterThread = new Handler();
     private Runnable mRequestReadingTask = new Runnable() {
@@ -137,15 +138,16 @@ public class StatusTab extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        View view = inflater.inflate(R.layout.tab_status, container, false);
+        View view = inflater.inflate(R.layout.status, container, false);
 
         Intent wantService = new Intent(getActivity(), GyroService.class);
         getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
 
-        /*gridLayout = (GridLayout) findViewById(R.id.gridlayout_main);
-        gridLayout.setUseDefaultMargins(false);
-        gridLayout.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
-        gridLayout.setRowOrderPreserved(false); remove grid padding*/
+        // Remove grid padding
+        GridLayout gridRaw = view.findViewById(R.id.grid_raw);
+        gridRaw.setUseDefaultMargins(false);
+        gridRaw.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
+        gridRaw.setRowOrderPreserved(false);
 
         chartX = view.findViewById(R.id.chart_x);
         chartY = view.findViewById(R.id.chart_y);
@@ -217,7 +219,6 @@ public class StatusTab extends Fragment {
         chart.setBackgroundColor(Color.WHITE);
         chart.getAxisRight().setEnabled(false);
         chart.getLegend().setEnabled(false);
-        chart.setVisibleXRangeMaximum(5);
 
         YAxis y = chart.getAxisLeft();
         y.setAxisMinimum(-1.1f);
@@ -246,9 +247,6 @@ public class StatusTab extends Fragment {
 
     @SuppressLint("SetTextI18n")
     private void updateValues(float[] latestRaw, float[] latestCooked) {
-        View view = getView();
-        if (view == null) return;
-
         // Update running history
         updateValueList(historyViewX, latestRaw[0]);
         updateValueList(historyViewY, latestRaw[1]);

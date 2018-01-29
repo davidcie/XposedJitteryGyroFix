@@ -1,7 +1,5 @@
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:grid="http://schemas.android.com/apk/res-auto"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/constraintLayout"
     android:layout_width="match_parent"
@@ -33,6 +31,7 @@
                     android:textAppearance="?android:attr/textAppearanceLarge" />
 
                 <GridLayout
+                    android:id="@+id/grid_raw"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:columnCount="3"
@@ -45,7 +44,7 @@
                         android:layout_gravity="fill_horizontal"
                         android:text="@string/x_axis"
                         android:gravity="center"
-                        android:paddingVertical="8dp"
+                        android:padding="8dp"
                         android:textAppearance="?android:attr/textAppearanceMedium" />
 
                     <TextView
@@ -55,7 +54,7 @@
                         android:layout_gravity="fill_horizontal"
                         android:text="@string/y_axis"
                         android:gravity="center"
-                        android:paddingVertical="8dp"
+                        android:padding="8dp"
                         android:textAppearance="?android:attr/textAppearanceMedium" />
 
                     <TextView
@@ -65,7 +64,7 @@
                         android:layout_gravity="fill_horizontal"
                         android:text="@string/z_axis"
                         android:gravity="center"
-                        android:paddingVertical="8dp"
+                        android:padding="8dp"
                         android:textAppearance="?android:attr/textAppearanceMedium" />
 
                     <net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView
