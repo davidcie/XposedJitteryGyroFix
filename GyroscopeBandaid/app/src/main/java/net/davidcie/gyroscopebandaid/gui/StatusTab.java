@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridLayout;
 
+import net.davidcie.gyroscopebandaid.FifoArray;
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
 import net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView;
@@ -38,16 +39,16 @@ import java.util.Locale;
 public class StatusTab extends Fragment {
 
     protected final static int UPDATE_EVERY_MS = 100;
-    private final static int GRAPH_VALUES = 20;
+    private final static int GRAPH_VALUES = 21;
 
     private TextureView mTextureView;
     private GraphRenderer mThread;
     private int mWidth;
     private int mHeight;
 
-    private CircularFifoQueue<Float> rawX = new CircularFifoQueue<>(GRAPH_VALUES + 1);
-    private CircularFifoQueue<Float> rawY = new CircularFifoQueue<>(GRAPH_VALUES + 1);
-    private CircularFifoQueue<Float> rawZ = new CircularFifoQueue<>(GRAPH_VALUES + 1);
+    private FifoArray<Float> rawX = new FifoArray<>(GRAPH_VALUES);
+    private FifoArray<Float> rawY = new FifoArray<>(GRAPH_VALUES);
+    private FifoArray<Float> rawZ = new FifoArray<>(GRAPH_VALUES);
 
 
     private boolean mIsVisible = false;
@@ -158,7 +159,7 @@ public class StatusTab extends Fragment {
         gridRaw.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
         gridRaw.setRowOrderPreserved(false);
 
-        for (int i = 0; i < GRAPH_VALUES+1; i++) {
+        for (int i = 0; i < GRAPH_VALUES; i++) {
             rawX.add(0f);
             rawY.add(0f);
             rawZ.add(0f);
@@ -247,7 +248,8 @@ public class StatusTab extends Fragment {
 
     private class GraphRenderer extends Thread {
 
-        private static final long TARGET_MS_PER_FRAME = (long) (1f / 60f * 1000f); //16.6ms per frame
+        private static final int TARGET_FPS = 30;
+        private static final long TARGET_MS_PER_FRAME = (long) (1f / TARGET_FPS * 1000f);
         private int FRAMES_PER_UPDATE;
         private long OPTIMAL_MS_PER_FRAME;
 
@@ -260,9 +262,9 @@ public class StatusTab extends Fragment {
         private float scaleY;
         private float deltaX;
 
-        CircularFifoQueue<Float> collection;
+        FifoArray<Float> collection;
 
-        public GraphRenderer(CircularFifoQueue<Float> collection) {
+        public GraphRenderer(FifoArray<Float> collection) {
             // Calculate how many frames of animation we can fit between new values
             FRAMES_PER_UPDATE = (int) Math.floor(UPDATE_EVERY_MS / TARGET_MS_PER_FRAME);
             OPTIMAL_MS_PER_FRAME = (long) (1000f / (FRAMES_PER_UPDATE * (1000f / UPDATE_EVERY_MS)));
@@ -295,17 +297,18 @@ public class StatusTab extends Fragment {
             // let's give ourself half of the most optimistic case
 
             int animationFrame = 0;
-            Float collectionHead = collection.get(0);
             float currentX, currentY, nextX, nextY, frameDeltaX;
+            final Float[] valueCopy = new Float[GRAPH_VALUES];
 
             while (mRunning && !Thread.interrupted()) {
                 final Canvas canvas = mTextureView.lockCanvas(null);
                 try {
-                    // Check if we should move on to another point
+                    // Check if we should move on to another point by comparing pointers
+                    // at collection heads; they will point to different Floats
                     //noinspection NumberEquality
-                    if (collection.get(0) != collectionHead) {
+                    if (valueCopy[0] != collection.get(0)) {
                         Log.v(Util.LOG_TAG, "Switching to a new value");
-                        collectionHead = collection.get(0);
+                        System.arraycopy(collection.getUnderlyingArray(), 0, valueCopy, 0, GRAPH_VALUES);
                         animationFrame = 0;
                     }
 
