@@ -32,8 +32,6 @@ import net.davidcie.gyroscopebandaid.Util;
 import net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
-import org.apache.commons.collections4.queue.CircularFifoQueue;
-
 import java.util.Locale;
 
 public class StatusTab extends Fragment {
