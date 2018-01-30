@@ -31,16 +31,23 @@ import net.davidcie.gyroscopebandaid.Util;
 import net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
+import org.apache.commons.collections4.queue.CircularFifoQueue;
+
 import java.util.Locale;
 
 public class StatusTab extends Fragment {
 
-    private final static int UPDATE_EVERY_MS = 250;
+    protected final static int UPDATE_EVERY_MS = 100;
+    private final static int GRAPH_VALUES = 20;
 
     private TextureView mTextureView;
-    private RenderThread mThread;
+    private GraphRenderer mThread;
     private int mWidth;
     private int mHeight;
+
+    private CircularFifoQueue<Float> rawX = new CircularFifoQueue<>(GRAPH_VALUES + 1);
+    private CircularFifoQueue<Float> rawY = new CircularFifoQueue<>(GRAPH_VALUES + 1);
+    private CircularFifoQueue<Float> rawZ = new CircularFifoQueue<>(GRAPH_VALUES + 1);
 
 
     private boolean mIsVisible = false;
@@ -151,6 +158,12 @@ public class StatusTab extends Fragment {
         gridRaw.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
         gridRaw.setRowOrderPreserved(false);
 
+        for (int i = 0; i < GRAPH_VALUES+1; i++) {
+            rawX.add(0f);
+            rawY.add(0f);
+            rawZ.add(0f);
+        }
+
         mTextureView = view.findViewById(R.id.myTexture);
         mTextureView.setSurfaceTextureListener(new CanvasListener());
         mTextureView.setOpaque(false);
@@ -170,10 +183,12 @@ public class StatusTab extends Fragment {
         super.onResume();
         if (mIsVisible) setServicePlayback(GyroService.PLAY);
         mUpdaterThread.post(mRequestReadingTask);
+        //mThread.run();
     }
 
     @Override
     public void onPause() {
+        //mThread.interrupt();
         mUpdaterThread.removeCallbacks(mRequestReadingTask);
         setServicePlayback(GyroService.PAUSE);
         super.onPause();
@@ -213,9 +228,12 @@ public class StatusTab extends Fragment {
     @SuppressLint("SetTextI18n")
     private void updateValues(float[] latestRaw, float[] latestCooked) {
         // Update running history
-        updateValueList(historyViewX, latestRaw[0]);
-        updateValueList(historyViewY, latestRaw[1]);
-        updateValueList(historyViewZ, latestRaw[2]);
+        //updateValueList(historyViewX, latestRaw[0]);
+        //updateValueList(historyViewY, latestRaw[1]);
+        //updateValueList(historyViewZ, latestRaw[2]);
+        rawX.add(Util.limit(latestRaw[0], -1f, 1f));
+        rawY.add(Util.limit(latestRaw[1], -1f, 1f));
+        rawZ.add(Util.limit(latestRaw[2], -1f, 1f));
     }
 
     private void updateValueList(VerticalScrollingTextView view, float newValue) {
@@ -227,8 +245,12 @@ public class StatusTab extends Fragment {
     }
 
 
-    private class RenderThread extends Thread {
-        private static final long FPS = (long) (1f / 60f * 1000f);
+    private class GraphRenderer extends Thread {
+
+        private static final long TARGET_MS_PER_FRAME = (long) (1f / 60f * 1000f); //16.6ms per frame
+        private int FRAMES_PER_UPDATE;
+        private long OPTIMAL_MS_PER_FRAME;
+
         private volatile boolean mRunning = true;
 
         private static final int RANGE_X = 20; // 0..20
@@ -236,37 +258,68 @@ public class StatusTab extends Fragment {
 
         private float scaleX;
         private float scaleY;
-        private float[] values = new float[20];
+        private float deltaX;
+
+        CircularFifoQueue<Float> collection;
+
+        public GraphRenderer(CircularFifoQueue<Float> collection) {
+            // Calculate how many frames of animation we can fit between new values
+            FRAMES_PER_UPDATE = (int) Math.floor(UPDATE_EVERY_MS / TARGET_MS_PER_FRAME);
+            OPTIMAL_MS_PER_FRAME = (long) (1000f / (FRAMES_PER_UPDATE * (1000f / UPDATE_EVERY_MS)));
+            this.collection = collection;
+        }
 
         @Override
         public void run() {
 
             scaleX = (float)mWidth / RANGE_X;
             scaleY = (float)mHeight / RANGE_Y;
+            deltaX = scaleX / FRAMES_PER_UPDATE; // we shift by this amount every animation frame
+
+            Log.d(Util.LOG_TAG, "TARGET_MS_PER_FRAME=" + TARGET_MS_PER_FRAME + " FRAMES_PER_UPDATE="
+                                + FRAMES_PER_UPDATE + " OPTIMAL_MS_PER_FRAME=" + OPTIMAL_MS_PER_FRAME
+                                + " deltaX=" + deltaX + " scaleX=" + scaleX + " UPDATE_EVERY_MS=" + UPDATE_EVERY_MS
+                                + " scaleY=" + scaleY);
 
             Paint paint = new Paint();
-            paint.setColor(0xff00ff00);
             paint.setColor(Color.RED);
+            paint.setStrokeWidth(5);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setFlags(Paint.ANTI_ALIAS_FLAG);
+            paint.setAntiAlias(true);
 
-            // Initialize graph
-            for (int v = 0; v < values.length; v++) {
-                values[v] = (float) (Math.random() * 2 - 1);
-            }
+            //int animationCountdown = 0;
+            // we have 16.6ms per frame
+            // new values appear every 100ms
+            // wa have at most 100/16 = 6 frames
+            // let's give ourself half of the most optimistic case
+
+            int animationFrame = 0;
+            Float collectionHead = collection.get(0);
+            float currentX, currentY, nextX, nextY, frameDeltaX;
 
             while (mRunning && !Thread.interrupted()) {
                 final Canvas canvas = mTextureView.lockCanvas(null);
                 try {
-                    canvas.drawColor(0x00000000, PorterDuff.Mode.CLEAR);
-                    paint.setStrokeWidth(5);
-                    paint.setStyle(Paint.Style.STROKE);
+                    // Check if we should move on to another point
+                    //noinspection NumberEquality
+                    if (collection.get(0) != collectionHead) {
+                        Log.v(Util.LOG_TAG, "Switching to a new value");
+                        collectionHead = collection.get(0);
+                        animationFrame = 0;
+                    }
 
-                    float currentX, currentY, nextX, nextY;
-                    currentX = 0;
-                    currentY = values[0] * scaleY;
+                    // Clear canvas every frame
+                    canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-                    for (int v = 1; v < values.length; v++) {
-                        nextX = v * scaleX;
-                        nextY = values[v] * scaleY;
+                    // Calculate starting point
+                    frameDeltaX = animationFrame * deltaX;
+                    currentX = translateX(0) - frameDeltaX;
+                    currentY = translateY(collection.get(0));
+
+                    for (int v = 1; v < collection.size(); v++) {
+                        nextX = translateX(v) - frameDeltaX;
+                        nextY = translateY(collection.get(v));
 
                         Path p = new Path();
                         p.moveTo(currentX, currentY);
@@ -277,16 +330,25 @@ public class StatusTab extends Fragment {
                         currentY = nextY;
                     }
 
+                    // Update animation frame
+                    animationFrame = Math.min(FRAMES_PER_UPDATE, animationFrame + 1);
+
                 } finally {
                     mTextureView.unlockCanvasAndPost(canvas);
                 }
 
                 try {
-                    Thread.sleep(FPS);
+                    Thread.sleep(TARGET_MS_PER_FRAME);
                 } catch (InterruptedException e) {
                     // Interrupted
                 }
             }
+        }
+
+        public void resize() {
+            Log.d(Util.LOG_TAG, "Thread.resize baby");
+            scaleX = (float)mWidth / RANGE_X;
+            scaleY = (float)mHeight / RANGE_Y;
         }
 
         public void stopRendering() {
@@ -294,18 +356,26 @@ public class StatusTab extends Fragment {
             mRunning = false;
         }
 
+        private float translateY(float from) {
+            float result = (-from + 1) * scaleY;
+            //if (result != 0.0f) Log.v(Util.LOG_TAG, "from=" + from + " to=" + result);
+            return result;
+        }
+
+        private float translateX(float from) {
+            return from * scaleX;
+        }
     }
 
 
     private class CanvasListener implements TextureView.SurfaceTextureListener {
         @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface,
-                                              int width, int height) {
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             Log.d(Util.LOG_TAG, "onSurfaceTextureAvailable");
-            mThread = new RenderThread();
-            mThread.start();
             mWidth = mTextureView.getWidth();
             mHeight = mTextureView.getHeight();
+            mThread = new GraphRenderer(rawX);
+            mThread.start();
             Log.d(Util.LOG_TAG, "width: " + mWidth + " height: " + height);
         }
 
@@ -319,11 +389,11 @@ public class StatusTab extends Fragment {
         }
 
         @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface,
-                                                int width, int height) {
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
             Log.d(Util.LOG_TAG, "onSurfaceTextureSizeChanged");
             mWidth = mTextureView.getWidth();
             mHeight = mTextureView.getHeight();
+            mThread.resize();
         }
 
         @Override

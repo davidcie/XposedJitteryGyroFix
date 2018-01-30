@@ -67,6 +67,8 @@ dependencies {
     compile 'com.mapzen.android:prefs-plus:1.0.0'
     // Graphs
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.3'
+    // CircularFifoQueue
+    compile 'org.apache.commons:commons-collections4:4.1'
 
     // Other
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
