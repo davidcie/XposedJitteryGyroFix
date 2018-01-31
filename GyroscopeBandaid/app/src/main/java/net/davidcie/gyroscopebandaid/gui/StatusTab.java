@@ -318,8 +318,8 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
                                 + " scaleY=" + scaleY);
 
             Paint paint = new Paint();
-            paint.setColor(Color.RED);
-            paint.setStrokeWidth(5);
+            paint.setColor(getResources().getColor(R.color.colorAccent));
+            paint.setStrokeWidth(6);
             paint.setStyle(Paint.Style.STROKE);
             paint.setFlags(Paint.ANTI_ALIAS_FLAG);
             paint.setAntiAlias(true);
