@@ -4,4 +4,7 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="lighter_gray">#ddd</color>
+    <color name="color_graph_xaxis">#FF7373</color>
+    <color name="color_graph_yaxis">#73FF73</color>
+    <color name="color_graph_zaxis">#7373FF</color>
 </resources>

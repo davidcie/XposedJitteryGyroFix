@@ -54,7 +54,8 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
     private FifoArray<Float> rawY = new FifoArray<>(GRAPH_VALUES);
     private FifoArray<Float> rawZ = new FifoArray<>(GRAPH_VALUES);
 
-    private NumberFormat plusMinus = new DecimalFormat("+00.000000000;–00.000000000");
+    private NumberFormat plusMinus = new DecimalFormat("+00.000000000;-00.000000000");
+    //private NumberFormat plusMinus = new DecimalFormat("+00.000000000;–00.000000000");
     private boolean mIsVisible = false;
     private Handler mUpdaterThread = new Handler();
     private Runnable mRequestReadingTask = new Runnable() {

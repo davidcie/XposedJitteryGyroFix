@@ -9,10 +9,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="601dp"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/card_padding"
-        tools:layout_editor_absoluteY="2dp">
+        android:padding="@dimen/card_padding">
 
         <android.support.v7.widget.CardView
             android:layout_width="match_parent"
@@ -32,25 +31,22 @@
 
                     <ImageView
                         android:id="@+id/icon_filter_status"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerInParent="true"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="5dp"
                         android:src="@drawable/ic_about"
-                        android:tint="@color/colorPrimary" />
-
+                        android:tint="@color/colorPrimary"
+                        android:layout_width="@dimen/status_icon_size"
+                        android:layout_height="@dimen/status_icon_size"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="@dimen/status_icon_margin"/>
                     <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_centerInParent="true"
-                        android:layout_toEndOf="@id/icon_filter_status"
                         android:text="@string/title_filters"
                         android:textAllCaps="true"
+                        android:textColor="@color/colorPrimary"
                         android:textAppearance="?android:attr/textAppearanceSmall"
-                        android:textColor="@color/colorPrimary" />
-
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toEndOf="@+id/icon_filter_status"
+                        android:layout_marginBottom="@dimen/status_title_baseline_correction"/>
                 </RelativeLayout>
 
                 <CheckedTextView
@@ -119,23 +115,23 @@
 
                     <ImageView
                         android:id="@+id/icon_readings_raw"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:src="@drawable/ic_approximate"
+                        android:tint="@color/colorPrimary"
+                        android:layout_width="@dimen/status_icon_size"
+                        android:layout_height="@dimen/status_icon_size"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_marginEnd="7dp"
-                        android:src="@drawable/ic_approximate"
-                        android:tint="@color/colorPrimary" />
-
+                        android:layout_marginEnd="@dimen/status_icon_margin"/>
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_toEndOf="@id/icon_readings_raw"
                         android:text="@string/title_original_values"
                         android:textAllCaps="true"
+                        android:textColor="@color/colorPrimary"
                         android:textAppearance="?android:attr/textAppearanceSmall"
-                        android:textColor="@color/colorPrimary" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toEndOf="@+id/icon_readings_raw"
+                        android:layout_marginBottom="@dimen/status_title_baseline_correction"/>
+
 
                 </RelativeLayout>
 
@@ -154,13 +150,13 @@
 
                     <ImageView
                         android:id="@+id/icon_dot_x"
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
+                        android:layout_width="@dimen/status_dot_size"
+                        android:layout_height="@dimen/status_dot_size"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="7dp"
                         android:src="@drawable/dot"
-                        android:tint="@color/colorAccent" />
+                        android:tint="@color/color_graph_xaxis" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -169,7 +165,8 @@
                         android:text="@string/x_axis"
                         android:textAllCaps="true"
                         android:textAppearance="?android:attr/textAppearanceSmall"
-                        android:textColor="@color/colorPrimary" />
+                        android:textColor="@color/colorPrimary"
+                        android:layout_marginBottom="@dimen/status_title_baseline_correction"/>
                 </RelativeLayout>
 
                 <TextView
@@ -177,6 +174,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="@dimen/card_padding_inner"
+                    android:fontFamily="monospace"
                     android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
                 <RelativeLayout
@@ -185,13 +183,13 @@
 
                     <ImageView
                         android:id="@+id/icon_dot_y"
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
+                        android:layout_width="@dimen/status_dot_size"
+                        android:layout_height="@dimen/status_dot_size"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="7dp"
                         android:src="@drawable/dot"
-                        android:tint="@color/colorPrimary" />
+                        android:tint="@color/color_graph_yaxis" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -200,13 +198,16 @@
                         android:text="@string/y_axis"
                         android:textAllCaps="true"
                         android:textAppearance="?android:attr/textAppearanceSmall"
-                        android:textColor="@color/colorPrimary" />
+                        android:textColor="@color/colorPrimary"
+                        android:layout_marginBottom="@dimen/status_title_baseline_correction"/>
                 </RelativeLayout>
 
                 <TextView
                     android:id="@+id/raw_y"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/card_padding_inner"
+                    android:fontFamily="monospace"
                     android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
                 <RelativeLayout
@@ -215,13 +216,13 @@
 
                     <ImageView
                         android:id="@+id/icon_dot_z"
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
+                        android:layout_width="@dimen/status_dot_size"
+                        android:layout_height="@dimen/status_dot_size"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="7dp"
                         android:src="@drawable/dot"
-                        android:tint="@color/colorPrimary" />
+                        android:tint="@color/color_graph_zaxis" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -230,13 +231,16 @@
                         android:text="@string/z_axis"
                         android:textAllCaps="true"
                         android:textAppearance="?android:attr/textAppearanceSmall"
-                        android:textColor="@color/colorPrimary" />
+                        android:textColor="@color/colorPrimary"
+                        android:layout_marginBottom="@dimen/status_title_baseline_correction"/>
                 </RelativeLayout>
 
                 <TextView
                     android:id="@+id/raw_z"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/card_padding_inner"
+                    android:fontFamily="monospace"
                     android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
                 <!-- SEPARATOR -->

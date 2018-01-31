@@ -7,5 +7,8 @@
     <dimen name="card_padding">16dp</dimen>
     <dimen name="card_padding_inner">16dp</dimen>
     <dimen name="card_button_size">48dp</dimen>
-    <dimen name="small_icon_size">14sp</dimen>
+    <dimen name="status_icon_size">16sp</dimen>
+    <dimen name="status_dot_size">8dp</dimen>
+    <dimen name="status_icon_margin">4dp</dimen>
+    <dimen name="status_title_baseline_correction">1sp</dimen>
 </resources>
