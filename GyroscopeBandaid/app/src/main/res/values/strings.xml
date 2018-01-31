@@ -81,6 +81,7 @@
 
     <!-- Status -->
     <string name="status_waiting">Waiting for motion…</string>
+    <string name="title_filters">Active filters</string>
     <string name="title_original_values">Raw sensor readings</string>
     <string name="title_processed_values">Processed sensor readings</string>
 

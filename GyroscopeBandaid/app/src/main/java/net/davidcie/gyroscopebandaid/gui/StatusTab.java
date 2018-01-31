@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,29 +19,34 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.GridLayout;
+import android.widget.CheckedTextView;
+import android.widget.Switch;
+import android.widget.TextView;
 
+import net.davidcie.gyroscopebandaid.Const;
 import net.davidcie.gyroscopebandaid.FifoArray;
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
-import net.davidcie.gyroscopebandaid.controls.VerticalScrollingTextView;
 import net.davidcie.gyroscopebandaid.services.GyroService;
 
-import java.util.Locale;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
-public class StatusTab extends Fragment {
+public class StatusTab extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     protected final static int UPDATE_EVERY_MS = 100;
     private final static int GRAPH_VALUES = 21;
 
-    private TextureView mTextureView;
-    private GraphRenderer mThread;
+    private TextureView mRawGraphView;
+    private GraphRenderer mGraphUpdaterThread;
     private int mWidth;
     private int mHeight;
 
@@ -48,7 +54,7 @@ public class StatusTab extends Fragment {
     private FifoArray<Float> rawY = new FifoArray<>(GRAPH_VALUES);
     private FifoArray<Float> rawZ = new FifoArray<>(GRAPH_VALUES);
 
-
+    private NumberFormat plusMinus = new DecimalFormat("+00.000000000;–00.000000000");
     private boolean mIsVisible = false;
     private Handler mUpdaterThread = new Handler();
     private Runnable mRequestReadingTask = new Runnable() {
@@ -63,10 +69,21 @@ public class StatusTab extends Fragment {
         }
     };
 
-    // Charts
-    VerticalScrollingTextView historyViewX;
-    VerticalScrollingTextView historyViewY;
-    VerticalScrollingTextView historyViewZ;
+    private void initializeFilterStatus(View view) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        CheckedTextView s;
+        if (prefs == null || view == null) return;
+        s = view.findViewById(R.id.calibration_status);
+        s.setChecked(prefs.getBoolean(Const.PREF_CALIBRATION_ENABLED, false));
+        s = view.findViewById(R.id.inversion_status);
+        s.setChecked(prefs.getBoolean(Const.PREF_INVERSION_ENABLED, false));
+        s = view.findViewById(R.id.smoothing_status);
+        s.setChecked(prefs.getBoolean(Const.PREF_SMOOTHING_ENABLED, false));
+        s = view.findViewById(R.id.thresholding_status);
+        s.setChecked(prefs.getBoolean(Const.PREF_THRESHOLDING_ENABLED, false));
+        s = view.findViewById(R.id.rounding_status);
+        s.setChecked(prefs.getBoolean(Const.PREF_ROUNDING_ENABLED, false));
+    }
 
     //region Service interaction
 
@@ -115,6 +132,7 @@ public class StatusTab extends Fragment {
      * Handler for incoming messages from the service.
      */
     class IncomingHandler extends Handler {
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -129,7 +147,6 @@ public class StatusTab extends Fragment {
             }
         }
     }
-
     private void setServicePlayback(int playOrPause) {
         if (mServiceBound) {
             Message message = Message.obtain(null, playOrPause);
@@ -140,8 +157,8 @@ public class StatusTab extends Fragment {
 
     //endregion
 
-
     //region Fragment overrides
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -151,35 +168,54 @@ public class StatusTab extends Fragment {
         Intent wantService = new Intent(getActivity(), GyroService.class);
         getActivity().bindService(wantService, mServiceConnection, Context.BIND_AUTO_CREATE);
 
-        // Remove grid padding
-        GridLayout gridRaw = view.findViewById(R.id.grid_raw);
-        gridRaw.setUseDefaultMargins(false);
-        gridRaw.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
-        gridRaw.setRowOrderPreserved(false);
-
         for (int i = 0; i < GRAPH_VALUES; i++) {
             rawX.add(0f);
             rawY.add(0f);
             rawZ.add(0f);
         }
 
-        mTextureView = view.findViewById(R.id.myTexture);
-        mTextureView.setSurfaceTextureListener(new CanvasListener());
-        mTextureView.setOpaque(false);
+        mRawGraphView = view.findViewById(R.id.graph_raw);
+        mRawGraphView.setSurfaceTextureListener(new CanvasListener());
+        mRawGraphView.setOpaque(false);
 
-        historyViewX = view.findViewById(R.id.original_x);
-        historyViewX.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
-        historyViewY = view.findViewById(R.id.original_y);
-        historyViewY.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
-        historyViewZ = view.findViewById(R.id.original_z);
-        historyViewZ.setLinesPerSecond(1000.0f/UPDATE_EVERY_MS);
+        initializeFilterStatus(view);
 
         return view;
     }
 
     @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        View view = getView();
+        if (view == null) return;
+        CheckedTextView s;
+        switch (key) {
+            case Const.PREF_CALIBRATION_ENABLED:
+                s = view.findViewById(R.id.calibration_status);
+                s.setChecked(sharedPreferences.getBoolean(key, false));
+                break;
+            case Const.PREF_INVERSION_ENABLED:
+                s = view.findViewById(R.id.inversion_status);
+                s.setChecked(sharedPreferences.getBoolean(key, false));
+                break;
+            case Const.PREF_SMOOTHING_ENABLED:
+                s = view.findViewById(R.id.smoothing_status);
+                s.setChecked(sharedPreferences.getBoolean(key, false));
+                break;
+            case Const.PREF_THRESHOLDING_ENABLED:
+                s = view.findViewById(R.id.thresholding_status);
+                s.setChecked(sharedPreferences.getBoolean(key, false));
+                break;
+            case Const.PREF_ROUNDING_ENABLED:
+                s = view.findViewById(R.id.rounding_status);
+                s.setChecked(sharedPreferences.getBoolean(key, false));
+                break;
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
+        PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
         if (mIsVisible) setServicePlayback(GyroService.PLAY);
         mUpdaterThread.post(mRequestReadingTask);
         //mThread.run();
@@ -190,6 +226,7 @@ public class StatusTab extends Fragment {
         //mThread.interrupt();
         mUpdaterThread.removeCallbacks(mRequestReadingTask);
         setServicePlayback(GyroService.PAUSE);
+        PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
         super.onPause();
     }
 
@@ -226,23 +263,22 @@ public class StatusTab extends Fragment {
 
     @SuppressLint("SetTextI18n")
     private void updateValues(float[] latestRaw, float[] latestCooked) {
-        // Update running history
-        //updateValueList(historyViewX, latestRaw[0]);
-        //updateValueList(historyViewY, latestRaw[1]);
-        //updateValueList(historyViewZ, latestRaw[2]);
+        updateText(R.id.raw_x, latestRaw[0]);
+        updateText(R.id.raw_y, latestRaw[1]);
+        updateText(R.id.raw_z, latestRaw[2]);
+
         rawX.add(Util.limit(latestRaw[0], -1f, 1f));
         rawY.add(Util.limit(latestRaw[1], -1f, 1f));
         rawZ.add(Util.limit(latestRaw[2], -1f, 1f));
     }
 
-    private void updateValueList(VerticalScrollingTextView view, float newValue) {
-        StringBuilder builder = new StringBuilder(view.getText());
-        if (builder.length() > 0) builder.append("\n");
-        builder.append(String.format(Locale.getDefault(), "%.10f", newValue));
-        //view.setText(builder.toString());
-        //view.scroll();
+    private void updateText(int id, float value) {
+        View view = getView();
+        if (view == null) return;
+        TextView text = view.findViewById(id);
+        if (text == null) return;
+        text.setText(plusMinus.format(value));
     }
-
 
     private class GraphRenderer extends Thread {
 
@@ -299,7 +335,7 @@ public class StatusTab extends Fragment {
             final Float[] valueCopy = new Float[GRAPH_VALUES];
 
             while (mRunning && !Thread.interrupted()) {
-                final Canvas canvas = mTextureView.lockCanvas(null);
+                final Canvas canvas = mRawGraphView.lockCanvas(null);
                 try {
                     // Check if we should move on to another point by comparing pointers
                     // at collection heads; they will point to different Floats
@@ -335,7 +371,7 @@ public class StatusTab extends Fragment {
                     animationFrame = Math.min(FRAMES_PER_UPDATE, animationFrame + 1);
 
                 } finally {
-                    mTextureView.unlockCanvasAndPost(canvas);
+                    mRawGraphView.unlockCanvasAndPost(canvas);
                 }
 
                 try {
@@ -373,18 +409,18 @@ public class StatusTab extends Fragment {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             Log.d(Util.LOG_TAG, "onSurfaceTextureAvailable");
-            mWidth = mTextureView.getWidth();
-            mHeight = mTextureView.getHeight();
-            mThread = new GraphRenderer(rawX);
-            mThread.start();
+            mWidth = mRawGraphView.getWidth();
+            mHeight = mRawGraphView.getHeight();
+            mGraphUpdaterThread = new GraphRenderer(rawX);
+            mGraphUpdaterThread.start();
             Log.d(Util.LOG_TAG, "width: " + mWidth + " height: " + height);
         }
 
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
             Log.d(Util.LOG_TAG, "onSurfaceTextureDestroyed");
-            if (mThread != null) {
-                mThread.stopRendering();
+            if (mGraphUpdaterThread != null) {
+                mGraphUpdaterThread.stopRendering();
             }
             return true;
         }
@@ -392,9 +428,9 @@ public class StatusTab extends Fragment {
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
             Log.d(Util.LOG_TAG, "onSurfaceTextureSizeChanged");
-            mWidth = mTextureView.getWidth();
-            mHeight = mTextureView.getHeight();
-            mThread.resize();
+            mWidth = mRawGraphView.getWidth();
+            mHeight = mRawGraphView.getHeight();
+            mGraphUpdaterThread.resize();
         }
 
         @Override
