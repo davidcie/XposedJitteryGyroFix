@@ -103,13 +103,14 @@ public class GraphTextureView extends TextureView {
 
     private class GraphRendererThread extends Thread {
 
-        private static final int TARGET_FPS = 30;
+        private static final int TARGET_FPS = 60;
         private static final long TARGET_MS_PER_FRAME = (long) (1f / TARGET_FPS * 1000f);
         private static final int RANGE_Y = 2;  // -1..1
 
         private final int mFramesPerUpdate;
         private final long mMsPerFrame;
         private volatile boolean mRunning = true;
+        private float[] mTempPoints = new float[mSize * 4];
 
         /**
          * How much we multiply by to go from source X value to screen X value.
@@ -130,7 +131,8 @@ public class GraphTextureView extends TextureView {
             // Calculate how many frames of animation we can fit between new values
             mFramesPerUpdate = (int) Math.floor(mValueEveryMs / TARGET_MS_PER_FRAME);
             // Adjust Thread.wait time to best fit between animation frames
-            mMsPerFrame = (long) (1000f / (mFramesPerUpdate * (1000f / mValueEveryMs)));
+            // giving us some extra time for processing and actual drawing
+            mMsPerFrame = (long) (1000f / (mFramesPerUpdate * (1000f / mValueEveryMs)) * 1.3);
         }
 
         @Override
@@ -189,25 +191,17 @@ public class GraphTextureView extends TextureView {
         }
 
         private void graphCollection(Float[] collection, Canvas canvas, Paint paint, float frameXOffset) {
-            float currentX, currentY, nextX, nextY;
+            int basePtr;
 
             // Calculate starting point
-            currentX = translateX(0) - frameXOffset;
-            currentY = translateY(collection[0]);
-
-            // Draw paths between all points
-            for (int v = 1; v < mSize; v++) {
-                nextX = translateX(v) - frameXOffset;
-                nextY = translateY(collection[v]);
-
-                Path p = new Path();
-                p.moveTo(currentX, currentY);
-                p.lineTo(nextX, nextY);
-                canvas.drawPath(p, paint);
-
-                currentX = nextX;
-                currentY = nextY;
+            for (int v = 0; v < mSize - 1; v++) {
+                basePtr = v * 4;
+                mTempPoints[basePtr] = translateX(v) - frameXOffset; //x0
+                mTempPoints[basePtr + 1] = translateY(collection[v]); //y0
+                mTempPoints[basePtr + 2] = translateX(v+1) - frameXOffset; //x1
+                mTempPoints[basePtr + 3] = translateY(collection[v+1]); //y1
             }
+            canvas.drawLines(mTempPoints, paint);
         }
 
         private Paint getPaint(int colorResource) {

@@ -36,7 +36,7 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
 
     // Settings
     private final static int UPDATE_EVERY_MS = 100;
-    private final static int GRAPH_VALUES = 21;
+    private final static int GRAPH_VALUES = 50;
     private final static NumberFormat plusMinus = new DecimalFormat("+00.000000000;-00.000000000"); //minus
     //private final static NumberFormat plusMinus = new DecimalFormat("+00.000000000;–00.000000000"); //ndash
 

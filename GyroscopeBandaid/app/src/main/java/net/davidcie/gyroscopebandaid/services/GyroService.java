@@ -67,7 +67,7 @@ public class GyroService extends Service {
         mGyroListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
-                Log.v(Util.LOG_TAG, "GyroService: Received SensorEvent " + Util.printArray(sensorEvent.values));
+                //Log.v(Util.LOG_TAG, "GyroService: Received SensorEvent " + Util.printArray(sensorEvent.values));
                 System.arraycopy(sensorEvent.values, 0, mLastRawValue, 0, 3);
                 mEngine.newReading(sensorEvent.values);
                 System.arraycopy(sensorEvent.values, 0, mLastCookedValue, 0, 3);
@@ -100,7 +100,7 @@ public class GyroService extends Service {
     public void play() {
         if (!mSensorActive && mGyroscope != null) {
             Log.d(Util.LOG_TAG, "GyroService: Enabling sensor");
-            mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+            mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_GAME);
             mSensorActive = true;
         }
     }
