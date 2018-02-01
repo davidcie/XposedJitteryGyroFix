@@ -135,7 +135,7 @@
 
                 </RelativeLayout>
 
-                <TextureView
+                <net.davidcie.gyroscopebandaid.controls.GraphTextureView
                     android:id="@+id/graph_raw"
                     android:layout_width="match_parent"
                     android:layout_height="80dp"
@@ -156,7 +156,8 @@
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="7dp"
                         android:src="@drawable/dot"
-                        android:tint="@color/color_graph_xaxis" />
+                        android:tint="@color/color_graph_xaxis"
+                        android:alpha="@string/color_graph_alpha"/>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -189,7 +190,8 @@
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="7dp"
                         android:src="@drawable/dot"
-                        android:tint="@color/color_graph_yaxis" />
+                        android:tint="@color/color_graph_yaxis"
+                        android:alpha="@string/color_graph_alpha"/>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -222,7 +224,8 @@
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="7dp"
                         android:src="@drawable/dot"
-                        android:tint="@color/color_graph_zaxis" />
+                        android:tint="@color/color_graph_zaxis"
+                        android:alpha="@string/color_graph_alpha"/>
 
                     <TextView
                         android:layout_width="wrap_content"

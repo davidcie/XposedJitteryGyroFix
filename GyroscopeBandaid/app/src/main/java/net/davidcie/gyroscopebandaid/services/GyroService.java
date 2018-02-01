@@ -62,6 +62,7 @@ public class GyroService extends Service {
 
         mEngine = new Engine(false, PreferenceManager.getDefaultSharedPreferences(this));
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        //noinspection ConstantConditions
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mGyroListener = new SensorEventListener() {
             @Override
