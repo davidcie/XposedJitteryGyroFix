@@ -9,6 +9,7 @@ import android.hardware.SensorManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -55,6 +56,8 @@ public class GyroService extends Service {
     private Sensor mGyroscope;
     private SensorEventListener mGyroListener;
     private boolean mSensorActive = false;
+    private HandlerThread mHandlerThread;
+    Handler handler;
 
     @Override
     public void onCreate() {
@@ -78,6 +81,9 @@ public class GyroService extends Service {
             public void onAccuracyChanged(Sensor sensor, int i) {
             }
         };
+        mHandlerThread = new HandlerThread("AccelerometerLogListener");
+        mHandlerThread.start();
+        handler = new Handler(mHandlerThread.getLooper());
     }
 
     private void notifyClient() {
@@ -100,7 +106,7 @@ public class GyroService extends Service {
     public void play() {
         if (!mSensorActive && mGyroscope != null) {
             Log.d(Util.LOG_TAG, "GyroService: Enabling sensor");
-            mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_GAME);
+            mSensorManager.registerListener(mGyroListener, mGyroscope, SensorManager.SENSOR_DELAY_GAME, handler);
             mSensorActive = true;
         }
     }

@@ -5,59 +5,110 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.SurfaceTexture;
-import android.os.Process;
+import android.graphics.Rect;
 import android.support.v4.os.TraceCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.TextureView;
+import android.view.View;
 
 import net.davidcie.gyroscopebandaid.FifoArray;
 import net.davidcie.gyroscopebandaid.R;
 import net.davidcie.gyroscopebandaid.Util;
 
-public class GraphTextureView extends TextureView {
+public class GraphTextureView extends View {
 
     private int mWidth = 0;
     private int mHeight = 0;
     private int mSize;
-    private final GraphTextureView mView = this;
-    private GraphRendererThread mGraphUpdaterThread;
     private FifoArray<Float> mCollectionOne;
     private FifoArray<Float> mCollectionTwo;
     private FifoArray<Float> mCollectionThree;
     private int mValueEveryMs;
+    private UpdateViewRunnable updateViewRunnable = new UpdateViewRunnable();
+    private boolean mUpdateView = false;
+    private boolean mInitialized = false;
+
+    // Migrated
+    private static final int RANGE_Y = 2;  // -1..1
+    private float scaleXaxis;
+    private float scaleYaxis;
+    private float deltaXaxis;
+    private float frameDeltaX;
+    private Float[] oneCopy;
+    private Float[] twoCopy;
+    private Float[] threeCopy;
+    private float[] mTempPointsOne;
+    private float[] mTempPointsTwo;
+    private float[] mTempPointsThree;
+    private final int mFramesPerUpdate = 6;
+    private int animationFrame = 0;
+    private final Paint paintOne = getPaint(R.color.color_graph_xaxis);
+    private final Paint paintTwo = getPaint(R.color.color_graph_yaxis);
+    private final Paint paintThree = getPaint(R.color.color_graph_zaxis);
+    private Paint white;
+    private Rect screen;
 
     public GraphTextureView(Context context) {
         super(context);
-        initialize();
     }
 
     public GraphTextureView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initialize();
     }
 
     public GraphTextureView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        initialize();
     }
 
     @SuppressWarnings("unused")
     public GraphTextureView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        initialize();
     }
 
-    private void initialize() {
-        setOpaque(false);
-        setSurfaceTextureListener(new GraphTextureListener());
+    @Override
+    protected void onAttachedToWindow() {
+        Log.d(Util.LOG_TAG, "onAttachedToWindow");
+        super.onAttachedToWindow();
+        mUpdateView = true;
+        post(updateViewRunnable);
     }
 
-    //TODO: stop rendering when not in view
+    @Override
+    protected void onDetachedFromWindow() {
+        mUpdateView = false;
+        super.onDetachedFromWindow();
+    }
 
-    public void setCollections(FifoArray<Float> one, FifoArray<Float> two, FifoArray<Float> three) {
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        //Rect zonk = canvas.getClipBounds();
+        //Log.v(Util.LOG_TAG, "GraphTextureView.onDraw isHardwareAccelerated=" + canvas.isHardwareAccelerated());
+        //Log.v(Util.LOG_TAG, "GraphTextureView.onDraw getClipBounds=(" + zonk.left + "," + zonk.top + "," + zonk.right + "," + zonk.bottom + ")");
+
+        TraceCompat.beginSection("GraphTextureView.onDraw");
+        //canvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR);
+        //canvas.drawRect(0, 0, mWidth, mHeight, white);
+        canvas.drawRect(screen, white);
+        canvas.drawLines(mTempPointsOne, paintOne);
+        canvas.drawLines(mTempPointsTwo, paintTwo);
+        canvas.drawLines(mTempPointsThree, paintThree);
+        TraceCompat.endSection();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        mWidth = getWidth();
+        mHeight = getHeight();
+        scaleXaxis = (float)mWidth / (mSize - 1);
+        scaleYaxis = (float)mHeight / RANGE_Y;
+        deltaXaxis = scaleXaxis / mFramesPerUpdate;
+        screen = new Rect(0, 0, mWidth, mHeight);
+    }
+
+    public void initialize(FifoArray<Float> one, FifoArray<Float> two, FifoArray<Float> three, int valueEveryMs) {
         if (!(one.size() == two.size() && two.size() == three.size())) {
             throw new IllegalArgumentException("Collections have to be the same size.");
         }
@@ -65,185 +116,90 @@ public class GraphTextureView extends TextureView {
         mCollectionTwo = two;
         mCollectionThree = three;
         mSize = mCollectionOne.size();
-    }
 
-    public void setUpdateFrequency(int valueEveryMs) {
+        oneCopy = new Float[mSize];
+        twoCopy = new Float[mSize];
+        threeCopy = new Float[mSize];
+        mTempPointsOne = new float[mSize * 4];
+        mTempPointsTwo = new float[mSize * 4];
+        mTempPointsThree = new float[mSize * 4];
+
         mValueEveryMs = valueEveryMs;
+
+        white = new Paint();
+        white.setStyle(Paint.Style.FILL);
+        white.setColor(Color.WHITE);
+        setLayerType(LAYER_TYPE_HARDWARE, null);
+        mInitialized = true;
     }
 
-    private class GraphTextureListener implements TextureView.SurfaceTextureListener {
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            Log.d(Util.LOG_TAG, "GraphTextureListener.onSurfaceTextureAvailable");
-            mWidth = getWidth();
-            mHeight = getHeight();
-            mGraphUpdaterThread = new GraphRendererThread();
-            mGraphUpdaterThread.start();
-        }
+    private Paint getPaint(int colorResource) {
+        TypedValue alpha = new TypedValue();
+        getResources().getValue(R.string.color_graph_alpha, alpha, true);
 
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            Log.d(Util.LOG_TAG, "GraphTextureListener.onSurfaceTextureDestroyed");
-            if (mGraphUpdaterThread != null) {
-                mGraphUpdaterThread.stopRendering();
-            }
-            return true;
-        }
-
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            Log.d(Util.LOG_TAG, "GraphTextureListener.onSurfaceTextureSizeChanged");
-            mWidth = getWidth();
-            mHeight = getHeight();
-            mGraphUpdaterThread.resize();
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) { }
+        Paint paint = new Paint();
+        paint.setColor(getResources().getColor(colorResource));
+        paint.setStrokeWidth(6);
+        paint.setAlpha((int) (alpha.getFloat() * 100));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setFlags(Paint.ANTI_ALIAS_FLAG);
+        paint.setAntiAlias(true);
+        return paint;
     }
 
-    private class GraphRendererThread extends Thread {
+    private float translateY(float from) {
+        return (-from + 1) * scaleYaxis;
+    }
 
-        private static final int TARGET_FPS = 60;
-        private static final long TARGET_MS_PER_FRAME = (long) (1f / TARGET_FPS * 1000f);
-        private static final int RANGE_Y = 2;  // -1..1
+    private float translateX(float from) {
+        return from * scaleXaxis;
+    }
 
-        private final int mFramesPerUpdate;
-        private final long mSleepMsPerFrame;
-        private volatile boolean mRunning = true;
-        private float[] mTempPoints = new float[mSize * 4];
-
-        /**
-         * How much we multiply by to go from source X value to screen X value.
-         */
-        private float scaleXaxis;
-
-        /**
-         * How much we multiply by to go from source Y value to screen Y value.
-         */
-        private float scaleYaxis;
-
-        /**
-         * The amount we shift by every animation frame.
-         */
-        private float deltaXaxis;
-
-        GraphRendererThread() {
-            // Calculate how many frames of animation we can fit between new values
-            mFramesPerUpdate = (int) Math.floor(mValueEveryMs / TARGET_MS_PER_FRAME);
-            // Adjust Thread.wait time to best fit between animation frames
-            // giving us 30% extra time for processing and actual drawing
-            mSleepMsPerFrame = (long) (1000f / (mFramesPerUpdate * (1000f / mValueEveryMs)) / 1.3);
+    private void prepareCollection(Float[] collection, float[] tempPoints, float xOffset) {
+        int basePtr;
+        for (int v = 0; v < mSize - 1; v++) {
+            basePtr = v * 4;
+            tempPoints[basePtr] = translateX(v) - xOffset; //x0
+            tempPoints[basePtr + 1] = translateY(collection[v]); //y0
+            tempPoints[basePtr + 2] = translateX(v+1) - xOffset; //x1
+            tempPoints[basePtr + 3] = translateY(collection[v+1]); //y1
         }
+    }
 
-        @Override
+    private class UpdateViewRunnable implements Runnable {
         public void run() {
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-            resize();
-            Log.d(Util.LOG_TAG, "GraphRendererThread.run: mFramesPerUpdate=" + mFramesPerUpdate + " mSleepMsPerFrame=" +
-                                mSleepMsPerFrame);
-
-            Paint paintOne = getPaint(R.color.color_graph_xaxis);
-            Paint paintTwo = getPaint(R.color.color_graph_yaxis);
-            Paint paintThree = getPaint(R.color.color_graph_zaxis);
-
-            int animationFrame = 0;
-            float frameDeltaX;
-            final Float[] oneCopy = new Float[mSize];
-            final Float[] twoCopy = new Float[mSize];
-            final Float[] threeCopy = new Float[mSize];
-
-            while (mRunning && !Thread.interrupted()) {
-                final Canvas canvas = mView.lockCanvas(null);
-                try {
-                    TraceCompat.beginSection("GyroBandaid draw graps");
-                    // Check if we should move on to another point by comparing pointers
-                    // at collection heads; they will point to different Floats
-                    //noinspection NumberEquality
-                    if (oneCopy[0] != mCollectionOne.get(0)) {
-                        Log.v(Util.LOG_TAG, "GraphRendererThread: new value detected");
-                        System.arraycopy(mCollectionOne.getUnderlyingArray(), 0, oneCopy, 0, mSize);
-                        System.arraycopy(mCollectionTwo.getUnderlyingArray(), 0, twoCopy, 0, mSize);
-                        System.arraycopy(mCollectionThree.getUnderlyingArray(), 0, threeCopy, 0, mSize);
-                        animationFrame = 0;
-                    }
-
-                    // Clear canvas every frame
-                    canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-
-                    // Paint collections
-                    frameDeltaX = animationFrame * deltaXaxis;
-                    graphCollection(oneCopy, canvas, paintOne, frameDeltaX);
-                    graphCollection(twoCopy, canvas, paintTwo, frameDeltaX);
-                    graphCollection(threeCopy, canvas, paintThree, frameDeltaX);
-
-                    // Update animation frame
-                    animationFrame = Math.min(mFramesPerUpdate, animationFrame + 1);
-
-                    TraceCompat.endSection();
-
-                } finally {
-                    mView.unlockCanvasAndPost(canvas);
-                }
-
-                try {
-                    Thread.sleep(mSleepMsPerFrame);
-                } catch (InterruptedException e) {
-                    // Interrupted
-                }
+            boolean repaint = false;
+            if (!mInitialized) {
+                if (mUpdateView) postDelayed(this, 16);
+                return;
             }
 
-            // Will naturally finish execution here if mRunning is set to false
-        }
+            TraceCompat.beginSection("UpdateViewRunnable prepare collections");
 
-        private void graphCollection(Float[] collection, Canvas canvas, Paint paint, float xOffset) {
-            int basePtr;
-
-            // Calculate starting point
-            for (int v = 0; v < mSize - 1; v++) {
-                basePtr = v * 4;
-                mTempPoints[basePtr] = translateX(v) - xOffset; //x0
-                mTempPoints[basePtr + 1] = translateY(collection[v]); //y0
-                mTempPoints[basePtr + 2] = translateX(v+1) - xOffset; //x1
-                mTempPoints[basePtr + 3] = translateY(collection[v+1]); //y1
+            //noinspection NumberEquality
+            if (oneCopy[0] != mCollectionOne.get(0)) {
+                System.arraycopy(mCollectionOne.getUnderlyingArray(), 0, oneCopy, 0, mSize);
+                System.arraycopy(mCollectionTwo.getUnderlyingArray(), 0, twoCopy, 0, mSize);
+                System.arraycopy(mCollectionThree.getUnderlyingArray(), 0, threeCopy, 0, mSize);
+                animationFrame = 0;
+                repaint = true;
+            } else if (animationFrame < mFramesPerUpdate) {
+                animationFrame = Math.min(mFramesPerUpdate, animationFrame + 1);
+                repaint = true;
             }
-            canvas.drawLines(mTempPoints, paint);
-        }
 
-        private Paint getPaint(int colorResource) {
-            TypedValue alpha = new TypedValue();
-            getResources().getValue(R.string.color_graph_alpha, alpha, true);
+            TraceCompat.endSection();
 
-            Paint paint = new Paint();
-            paint.setColor(getResources().getColor(colorResource));
-            paint.setStrokeWidth(6);
-            paint.setAlpha((int) (alpha.getFloat() * 100));
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setFlags(Paint.ANTI_ALIAS_FLAG);
-            paint.setAntiAlias(true);
-            return paint;
-        }
+            if (repaint) {
+                frameDeltaX = animationFrame * deltaXaxis;
+                prepareCollection(oneCopy, mTempPointsOne, frameDeltaX);
+                prepareCollection(twoCopy, mTempPointsTwo, frameDeltaX);
+                prepareCollection(threeCopy, mTempPointsThree, frameDeltaX);
+                //invalidate(0, 0, mWidth, mHeight);
+                invalidate(screen);
+            }
 
-        void resize() {
-            scaleXaxis = (float)mWidth / (mSize - 1);
-            scaleYaxis = (float)mHeight / RANGE_Y;
-            deltaXaxis = scaleXaxis / mFramesPerUpdate;
-            Log.d(Util.LOG_TAG, "GraphRendererThread.resize: mWidth=" + mWidth + " mHeight=" + mHeight + " scaleXaxis=" + scaleXaxis
-                                + " scaleYaxis=" + scaleYaxis + " deltaXaxis=" + deltaXaxis);
-        }
-
-        void stopRendering() {
-            Log.d(Util.LOG_TAG, "GraphRendererThread.stopRendering");
-            interrupt();
-            mRunning = false;
-        }
-
-        private float translateY(float from) {
-            return (-from + 1) * scaleYaxis;
-        }
-
-        private float translateX(float from) {
-            return from * scaleXaxis;
+            if (mUpdateView) postDelayed(this, 16);
         }
     }
 }

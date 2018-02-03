@@ -151,8 +151,7 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
         }
 
         GraphTextureView mRawGraphView = mView.findViewById(R.id.graph_raw);
-        mRawGraphView.setCollections(rawX, rawY, rawZ);
-        mRawGraphView.setUpdateFrequency(UPDATE_EVERY_MS);
+        mRawGraphView.initialize(rawX, rawY, rawZ, UPDATE_EVERY_MS);
 
         initializeFilterStatus();
 
@@ -161,30 +160,7 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (mView == null) return;
-        CheckedTextView s;
-        switch (key) {
-            case Const.PREF_CALIBRATION_ENABLED:
-                s = mView.findViewById(R.id.calibration_status);
-                s.setChecked(sharedPreferences.getBoolean(key, false));
-                break;
-            case Const.PREF_INVERSION_ENABLED:
-                s = mView.findViewById(R.id.inversion_status);
-                s.setChecked(sharedPreferences.getBoolean(key, false));
-                break;
-            case Const.PREF_SMOOTHING_ENABLED:
-                s = mView.findViewById(R.id.smoothing_status);
-                s.setChecked(sharedPreferences.getBoolean(key, false));
-                break;
-            case Const.PREF_THRESHOLDING_ENABLED:
-                s = mView.findViewById(R.id.thresholding_status);
-                s.setChecked(sharedPreferences.getBoolean(key, false));
-                break;
-            case Const.PREF_ROUNDING_ENABLED:
-                s = mView.findViewById(R.id.rounding_status);
-                s.setChecked(sharedPreferences.getBoolean(key, false));
-                break;
-        }
+
     }
 
     @Override
@@ -235,26 +211,14 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
     //endregion
 
     private void initializeFilterStatus() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        CheckedTextView s;
-        if (prefs == null || mView == null) return;
-        s = mView.findViewById(R.id.calibration_status);
-        s.setChecked(prefs.getBoolean(Const.PREF_CALIBRATION_ENABLED, false));
-        s = mView.findViewById(R.id.inversion_status);
-        s.setChecked(prefs.getBoolean(Const.PREF_INVERSION_ENABLED, false));
-        s = mView.findViewById(R.id.smoothing_status);
-        s.setChecked(prefs.getBoolean(Const.PREF_SMOOTHING_ENABLED, false));
-        s = mView.findViewById(R.id.thresholding_status);
-        s.setChecked(prefs.getBoolean(Const.PREF_THRESHOLDING_ENABLED, false));
-        s = mView.findViewById(R.id.rounding_status);
-        s.setChecked(prefs.getBoolean(Const.PREF_ROUNDING_ENABLED, false));
+
     }
 
     @SuppressLint("SetTextI18n")
     private void updateValues(float[] latestRaw, float[] latestCooked) {
-        updateText(R.id.raw_x, latestRaw[0]);
-        updateText(R.id.raw_y, latestRaw[1]);
-        updateText(R.id.raw_z, latestRaw[2]);
+        //updateText(R.id.raw_x, latestRaw[0]);
+        //updateText(R.id.raw_y, latestRaw[1]);
+        //updateText(R.id.raw_z, latestRaw[2]);
 
         rawX.add(Util.limit(latestRaw[0], -1f, 1f));
         rawY.add(Util.limit(latestRaw[1], -1f, 1f));

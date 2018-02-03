@@ -38,40 +38,10 @@ public class MainActivity extends Activity {
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(viewPager));
 
-        // Set up FAB
-        mPlayPauseButton = findViewById(R.id.playPauseButton);
-        mPlayPauseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mPaused = !mPaused;
-                updatePlayPauseButton();
-                // TODO: write pref_global_enabled false
-            }
-        });
 
-        // Warn that Xposed is not installed or module active
-        if (!isXposedInstalled(getPackageManager())) {
-            mPlayPauseButton.setEnabled(false);
-            showWarning(R.string.xposed_inactive);
-        } else if (!Util.isModuleActivated()) {
-            mPlayPauseButton.setEnabled(false);
-            showWarning(R.string.module_inactive);
-        }
+
     }
 
-    private void showWarning(int stringResId) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(getString(stringResId));
-        builder.setPositiveButton(R.string.ok, null);
-        builder.create().show();
-    }
-
-    private void updatePlayPauseButton() {
-        FloatingMusicActionButton.Mode transition = mPaused
-                ? FloatingMusicActionButton.Mode.PLAY_TO_PAUSE
-                : FloatingMusicActionButton.Mode.PAUSE_TO_PLAY;
-        mPlayPauseButton.changeMode(transition);
-    }
 
     public class MyPagerAdapter extends FragmentPagerAdapter {
 
