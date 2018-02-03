@@ -6,6 +6,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.v4.os.TraceCompat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -18,36 +20,38 @@ import net.davidcie.gyroscopebandaid.Util;
 
 public class GraphTextureView extends View {
 
-    private int mWidth = 0;
-    private int mHeight = 0;
-    private int mSize;
-    private FifoArray<Float> mCollectionOne;
-    private FifoArray<Float> mCollectionTwo;
-    private FifoArray<Float> mCollectionThree;
+    private volatile int mWidth = 0;
+    private volatile int mHeight = 0;
+    private volatile int mSize;
+    private volatile FifoArray<Float> mCollectionOne;
+    private volatile FifoArray<Float> mCollectionTwo;
+    private volatile FifoArray<Float> mCollectionThree;
     private int mValueEveryMs;
     private UpdateViewRunnable updateViewRunnable = new UpdateViewRunnable();
-    private boolean mUpdateView = false;
-    private boolean mInitialized = false;
+    private HandlerThread mHandlerThread;
+    private volatile Handler handler;
+    private volatile boolean mUpdateView = false;
+    private volatile boolean mInitialized = false;
 
     // Migrated
     private static final int RANGE_Y = 2;  // -1..1
-    private float scaleXaxis;
-    private float scaleYaxis;
-    private float deltaXaxis;
-    private float frameDeltaX;
-    private Float[] oneCopy;
-    private Float[] twoCopy;
-    private Float[] threeCopy;
-    private float[] mTempPointsOne;
-    private float[] mTempPointsTwo;
-    private float[] mTempPointsThree;
+    private volatile float scaleXaxis;
+    private volatile float scaleYaxis;
+    private volatile float deltaXaxis;
+    private volatile float frameDeltaX;
+    private volatile Float[] oneCopy;
+    private volatile Float[] twoCopy;
+    private volatile Float[] threeCopy;
+    private volatile float[] mTempPointsOne;
+    private volatile float[] mTempPointsTwo;
+    private volatile float[] mTempPointsThree;
+    private volatile int animationFrame = 0;
     private final int mFramesPerUpdate = 6;
-    private int animationFrame = 0;
     private final Paint paintOne = getPaint(R.color.color_graph_xaxis);
     private final Paint paintTwo = getPaint(R.color.color_graph_yaxis);
     private final Paint paintThree = getPaint(R.color.color_graph_zaxis);
     private Paint white;
-    private Rect screen;
+    private volatile Rect screen;
 
     public GraphTextureView(Context context) {
         super(context);
@@ -71,13 +75,19 @@ public class GraphTextureView extends View {
         Log.d(Util.LOG_TAG, "onAttachedToWindow");
         super.onAttachedToWindow();
         mUpdateView = true;
-        post(updateViewRunnable);
+
+        mHandlerThread = new HandlerThread("GraphUpdater", android.os.Process.THREAD_PRIORITY_BACKGROUND);
+        mHandlerThread.start();
+        handler = new Handler(mHandlerThread.getLooper());
+        handler.post(updateViewRunnable);
+        //post(updateViewRunnable);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         Log.d(Util.LOG_TAG, "onDetachedFromWindow");
         mUpdateView = false;
+        if (mHandlerThread != null) mHandlerThread.quit();
         super.onDetachedFromWindow();
     }
 
@@ -170,8 +180,8 @@ public class GraphTextureView extends View {
     private class UpdateViewRunnable implements Runnable {
         public void run() {
 
-            if (mUpdateView) postDelayed(this, 16);
-            if (!mInitialized) return;
+            if (mUpdateView) handler.postDelayed(this, 16);
+            if (!mInitialized || screen == null) return;
 
             TraceCompat.beginSection("UpdateViewRunnable prepare collections");
             boolean repaint = false;
@@ -195,7 +205,8 @@ public class GraphTextureView extends View {
                 prepareCollection(twoCopy, mTempPointsTwo, frameDeltaX);
                 prepareCollection(threeCopy, mTempPointsThree, frameDeltaX);
                 //invalidate(0, 0, mWidth, mHeight);
-                invalidate(screen);
+                //invalidate(screen);
+                postInvalidate(0, 0, mWidth, mHeight);
             }
         }
     }

@@ -10,8 +10,10 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Trace;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.v4.os.TraceCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -63,6 +65,7 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
     private Runnable mRequestReadingTask = new Runnable() {
         @Override
         public void run() {
+            TraceCompat.beginSection("mRequestReadingTask");
             mUpdaterThread.postDelayed(this, UPDATE_EVERY_MS);
             if (mSensorActive) {
                 float[] newRaw = new float[3];
@@ -73,6 +76,7 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
                 }
                 updateValues(newRaw, newCooked);
             }
+            TraceCompat.endSection();
         }
     };
 
@@ -112,7 +116,7 @@ public class StatusTab extends Fragment implements SharedPreferences.OnSharedPre
             public void onAccuracyChanged(Sensor sensor, int i) {
             }
         };
-        mHandlerThread = new HandlerThread("AccelerometerLogListener");
+        mHandlerThread = new HandlerThread("GyroUpdater", android.os.Process.THREAD_PRIORITY_BACKGROUND);
         mHandlerThread.start();
         handler = new Handler(mHandlerThread.getLooper());
 
