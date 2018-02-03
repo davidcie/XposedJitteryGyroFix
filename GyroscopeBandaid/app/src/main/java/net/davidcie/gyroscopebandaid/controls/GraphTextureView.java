@@ -76,6 +76,7 @@ public class GraphTextureView extends View {
 
     @Override
     protected void onDetachedFromWindow() {
+        Log.d(Util.LOG_TAG, "onDetachedFromWindow");
         mUpdateView = false;
         super.onDetachedFromWindow();
     }
@@ -168,14 +169,12 @@ public class GraphTextureView extends View {
 
     private class UpdateViewRunnable implements Runnable {
         public void run() {
-            boolean repaint = false;
-            if (!mInitialized) {
-                if (mUpdateView) postDelayed(this, 16);
-                return;
-            }
+
+            if (mUpdateView) postDelayed(this, 16);
+            if (!mInitialized) return;
 
             TraceCompat.beginSection("UpdateViewRunnable prepare collections");
-
+            boolean repaint = false;
             //noinspection NumberEquality
             if (oneCopy[0] != mCollectionOne.get(0)) {
                 System.arraycopy(mCollectionOne.getUnderlyingArray(), 0, oneCopy, 0, mSize);
@@ -198,8 +197,6 @@ public class GraphTextureView extends View {
                 //invalidate(0, 0, mWidth, mHeight);
                 invalidate(screen);
             }
-
-            if (mUpdateView) postDelayed(this, 16);
         }
     }
 }
